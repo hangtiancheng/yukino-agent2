@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "codegraph": {
+      "command": "codegraph",
+      "args": ["serve", "--mcp"],
+      "disabled": false
+    },
+    "yukino-agent2-mcp-http": {
+      "url": "http://127.0.0.1:3300/mcp",
+      "transport": "sse"
+    },
+    "yukino-agent2-mcp": {
+      "command": "node",
+      "args": ["main.js", "agent2-mcp"],
+      "enabled": false
+    }
+  }
+}

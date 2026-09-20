@@ -1,0 +1,14 @@
+allowBuilds:
+  better-sqlite3: true
+  protobufjs: true
+  prisma: true
+  "@prisma/engines": true
+  onnxruntime-node: true
+  esbuild: true
+  sharp: true
+
+minimumReleaseAgeExclude:
+  - "@yukino.js/lit-jsx@0.0.5"
+
+packages:
+  - fe

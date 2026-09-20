@@ -1,0 +1,38 @@
+{
+  "include": [
+    "app",
+    "vite.config.ts"
+  ],
+  "compilerOptions": {
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2022"
+    ],
+    "types": [
+      "node",
+      "vite/client"
+    ],
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    /* lit-jsx: JSX compiles to lit-html TemplateResults */
+    "jsx": "react-jsx",
+    "jsxImportSource": "@yukino.js/lit-jsx",
+    /* Lit legacy decorators + class-field semantics (see lit docs:
+       "Avoiding issues with class fields") — do not modernize these away */
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "paths": {
+      "~/*": [
+        "./app/*"
+      ]
+    },
+    "esModuleInterop": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true
+  }
+}
