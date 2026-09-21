@@ -68,14 +68,6 @@ const TSX = ["pnpm", "exec", "tsx"];
 
 /** @type {Record<string, Service>} */
 const SERVICES = {
-  milvus: {
-    description: "the Milvus dense bridge (gRPC on 127.0.0.1:50051)",
-    cmd: ["uv", "run", "python", "src/milvus/server.py"],
-    dirs: ["data/milvus"],
-    ready: { kind: "log", pattern: "listening", timeoutMs: 5_000 },
-    startedMsg:
-      "Milvus bridge started: 127.0.0.1:50051 (pid in data/milvus.pid)",
-  },
   "mcp-logistics": {
     description: "the logistics MCP server (:8101)",
     cmd: [TSX_BIN, "src/mcp-servers/logistics.ts"],
@@ -350,6 +342,197 @@ async function mcpUp() {
   await daemonUp("mcp-aftersales", SERVICES["mcp-aftersales"]);
 }
 
+// --- Milvus Standalone lifecycle (RPM/DEB systemd install, or docker compose fallback) ---
+// Milvus is a system-level service, not a repo daemon: no pid/log files here, the unit or
+// docker compose owns the process. The Node server talks to it directly over gRPC
+// (src/kb/milvus.ts) once MILVUS_URI is set.
+const MILVUS_COMPOSE_DIR = path.join(ROOT, "deploy", "milvus");
+const MILVUS_HEALTHZ_URL = "http://127.0.0.1:9091/healthz";
+const MILVUS_INSTALL_HINT = [
+  "No Milvus Standalone install found on this machine. Install one of:",
+  "  1) RPM/DEB package (systemd service) — download milvus_<ver>-1_<arch>.deb/.rpm from the",
+  "     Milvus releases page, `apt install -y ./milvus_*.deb` (or `yum install -y ./milvus_*.rpm`),",
+  "     which installs the milvus.service systemd unit this command drives;",
+  "  2) Docker — install Docker, then this command runs the vendored compose file",
+  `     ${path.relative(ROOT, MILVUS_COMPOSE_DIR)}/docker-compose.yml (etcd + MinIO + standalone).`,
+].join("\n");
+
+/**
+ * Detect how Milvus Standalone is installed: the RPM/DEB package registers a systemd unit
+ * (preferred), otherwise fall back to the vendored docker compose file when docker exists.
+ * @returns {"systemd" | "docker" | null}
+ */
+function milvusBackend() {
+  const unit = spawnSync("systemctl", ["cat", "milvus.service"], {
+    stdio: "ignore",
+  });
+  if (unit.status === 0) {
+    return "systemd";
+  }
+  const docker = spawnSync("docker", ["compose", "version"], {
+    stdio: "ignore",
+  });
+  if (
+    docker.status === 0 &&
+    fs.existsSync(path.join(MILVUS_COMPOSE_DIR, "docker-compose.yml"))
+  ) {
+    return "docker";
+  }
+  return null;
+}
+
+/**
+ * systemctl needs root; prefix passwordless sudo when running as a regular user.
+ * @param {string[]} args - systemctl arguments.
+ * @returns {string[]} argv for spawnSync.
+ */
+function systemctlArgv(...args) {
+  const isRoot = typeof process.getuid === "function" && process.getuid() === 0;
+  return isRoot ? ["systemctl", args] : ["sudo", ["-n", "systemctl", ...args]];
+}
+
+/**
+ * Poll the Standalone health endpoint until it answers 200 (unlike waitForHttp, a non-200
+ * probe means "still starting" and keeps waiting).
+ * @param {string} url - Absolute healthz URL.
+ * @param {number} timeoutMs - Polling budget.
+ * @returns {Promise<boolean>}
+ */
+async function waitForHealthz(url, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(2_000) });
+      if (res.status === 200) {
+        return true;
+      }
+    } catch {
+      // Not answering yet — keep polling.
+    }
+    await sleep(1_000);
+  }
+  return false;
+}
+
+/**
+ * Run a command, streaming stdio, and report a failure with context.
+ * @param {string[]} argv - Command and arguments.
+ * @param {string} failureMsg - Printed when the command exits non-zero.
+ * @returns {boolean} true when the command succeeded.
+ */
+function runChecked(argv, failureMsg) {
+  const result = spawnSync(argv[0], argv.slice(1), {
+    cwd: ROOT,
+    stdio: "inherit",
+  });
+  if (result.error || result.status !== 0) {
+    console.error(`${failureMsg}: ${argv.join(" ")}`);
+    if (result.error) {
+      console.error(result.error.message);
+    }
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Start Milvus Standalone and wait until it is healthy.
+ * @returns {Promise<void>}
+ */
+async function milvusUp() {
+  if (await waitForHealthz(MILVUS_HEALTHZ_URL, 3_000)) {
+    console.log(
+      "Milvus Standalone already running (healthz OK; gRPC on 127.0.0.1:19530)",
+    );
+    return;
+  }
+  const backend = milvusBackend();
+  if (backend === null) {
+    console.error(MILVUS_INSTALL_HINT);
+    process.exitCode = 1;
+    return;
+  }
+  let started;
+  if (backend === "systemd") {
+    const [cmd, args] = systemctlArgv("start", "milvus");
+    started = runChecked([cmd, ...args], "Failed to start milvus.service");
+  } else {
+    console.log("Starting Milvus via docker compose (deploy/milvus)...");
+    // -f keeps the project directory at deploy/milvus, so the bind-mounted volumes land
+    // in deploy/milvus/volumes/ (gitignored).
+    started = runChecked(
+      [
+        "docker",
+        "compose",
+        "-f",
+        path.join(MILVUS_COMPOSE_DIR, "docker-compose.yml"),
+        "up",
+        "-d",
+      ],
+      "docker compose up failed",
+    );
+  }
+  if (!started) {
+    process.exitCode = 1;
+    return;
+  }
+  console.log("Waiting for Milvus to become healthy (up to 3 minutes)...");
+  const healthy = await waitForHealthz(MILVUS_HEALTHZ_URL, 180_000);
+  if (!healthy) {
+    console.error(
+      backend === "systemd"
+        ? "Milvus did not become healthy; check `systemctl status milvus` and journalctl -u milvus"
+        : "Milvus did not become healthy; check `docker compose -f deploy/milvus/docker-compose.yml logs standalone`",
+    );
+    process.exitCode = 1;
+    return;
+  }
+  console.log(
+    "Milvus Standalone started: gRPC 127.0.0.1:19530, WebUI http://127.0.0.1:9091/webui/",
+  );
+  console.log(
+    "Then set MILVUS_URI=http://127.0.0.1:19530 in .env (and restart the Node server).",
+  );
+}
+
+/**
+ * Stop Milvus Standalone.
+ * @returns {Promise<void>}
+ */
+async function milvusDown() {
+  const backend = milvusBackend();
+  if (backend === null) {
+    console.error(MILVUS_INSTALL_HINT);
+    process.exitCode = 1;
+    return;
+  }
+  let stopped;
+  if (backend === "systemd") {
+    const [cmd, args] = systemctlArgv("stop", "milvus");
+    stopped = runChecked([cmd, ...args], "Failed to stop milvus.service");
+  } else {
+    const result = spawnSync(
+      "docker",
+      [
+        "compose",
+        "-f",
+        path.join(MILVUS_COMPOSE_DIR, "docker-compose.yml"),
+        "down",
+      ],
+      { cwd: ROOT, stdio: "inherit" },
+    );
+    stopped = !result.error && result.status === 0;
+    if (!stopped) {
+      console.error("docker compose down failed");
+    }
+  }
+  if (!stopped) {
+    process.exitCode = 1;
+    return;
+  }
+  console.log("Milvus Standalone stopped");
+}
+
 /** @type {Record<string, Command>} */
 const COMMANDS = {
   help: {
@@ -425,30 +608,13 @@ const COMMANDS = {
     ...TSX,
     "scripts/kb-repatch.ts",
   ]),
-  "milvus-proto": {
-    description: "Regenerate Python gRPC stubs from kb_store.proto",
-    run: () => {
-      fs.mkdirSync(path.join(ROOT, "src", "milvus", "pb"), { recursive: true });
-      runForeground([
-        "uv",
-        "run",
-        "python",
-        "-m",
-        "grpc_tools.protoc",
-        "-I",
-        "src/milvus",
-        "--python_out=src/milvus/pb",
-        "--grpc_python_out=src/milvus/pb",
-        "--mypy_out=src/milvus/pb",
-        "--mypy_grpc_out=src/milvus/pb",
-        "src/milvus/kb_store.proto",
-      ]);
-      if (!process.exitCode) {
-        console.log(
-          "Regenerated src/milvus/pb/kb_store_pb2.py/.pyi and kb_store_pb2_grpc.py/.pyi",
-        );
-      }
-    },
+  "milvus-up": {
+    description: "Start Milvus Standalone (systemd service or docker compose)",
+    run: milvusUp,
+  },
+  "milvus-down": {
+    description: "Stop Milvus Standalone (systemd service or docker compose)",
+    run: milvusDown,
   },
   "seed-conv": task("Seed historical conversations into the DB", [
     ...TSX,

@@ -35,8 +35,6 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@grpc/grpc-js": "^1.14.5",
-    "@grpc/proto-loader": "^0.8.1",
     "@hono/node-server": "^2.1.1",
     "@hono/zod-validator": "^0.9.1",
     "@huggingface/tokenizers": "^0.2.0",
@@ -57,6 +55,7 @@
     "@opentelemetry/sdk-node": "^0.222.0",
     "@prisma/adapter-better-sqlite3": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "@zilliz/milvus2-sdk-node": "^3.0.6",
     "ajv": "8.20.0",
     "h3": "2.0.1-rc.32",
     "hono": "^4.13.8",

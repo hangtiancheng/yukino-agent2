@@ -80,11 +80,14 @@ export const settings = {
   subquerySplit: bool("SUBQUERY_SPLIT", true),
   rerankMinScore: num("RERANK_MIN_SCORE", 0.3),
 
-  // --- milvus dense bridge (optional) ---
+  // --- milvus standalone dense store (optional) ---
   // Empty = disabled: dense retrieval runs in-process over SQLite embeddings (legacy).
-  // Set to "host:port" of the Python gRPC bridge (src/milvus/server.py) to make Milvus the
-  // authoritative dense store; BM25 always stays in-process. See src/kb/milvus-rpc.ts.
-  milvusRpcUrl: str("MILVUS_RPC_URL"),
+  // Set to the Milvus Standalone address (e.g. http://127.0.0.1:19530) to make Milvus the
+  // authoritative dense store; BM25 always stays in-process. See src/kb/milvus.ts.
+  milvusUri: str("MILVUS_URI"),
+  // Optional auth token ("username:password" or an API key) for a secured Milvus;
+  // Standalone ships with authorization disabled, so this stays empty by default.
+  milvusToken: str("MILVUS_TOKEN"),
   milvusCollection: str("MILVUS_COLLECTION", "knowledge"),
 
   // --- graph orchestration ---

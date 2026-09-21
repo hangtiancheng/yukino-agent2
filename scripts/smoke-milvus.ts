@@ -1,101 +1,48 @@
-// Smoke the Milvus dense bridge end to end: spawn an isolated Python gRPC server (throwaway
-// Lite db + "smoke" collection), then drive the JS client (src/kb/milvus-rpc.ts) through
-// upsert -> search -> count -> delete -> drop. A failure is a red line: stop.
+// Smoke Milvus Standalone end to end: drive the Node SDK client (src/kb/milvus.ts) through
+// upsert -> search -> count -> delete -> drop against a throwaway "smoke" collection.
+// A failure is a red line: stop.
 //
-// This is the JS counterpart of the Python original's Milvus smoke, scoped to dense only: the
-// bridge wraps Milvus Lite, while BM25 stays in-process on the Node side (see src/kb/store.ts).
-// It runs against a throwaway collection so it never touches a real knowledge base.
-// Run: node scripts/smoke-milvus.ts (requires uv + the milvus deps: pymilvus, milvus-lite, grpcio)
-import { spawn } from "node:child_process";
-import type { ChildProcess } from "node:child_process";
-import fs from "node:fs";
-import net from "node:net";
-import os from "node:os";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+// Scoped to dense only, like the rest of this stack: BM25 stays in-process on the Node side
+// (see src/kb/store.ts). The throwaway collection never touches a real knowledge base.
+// Run: node scripts/smoke-milvus.ts
+// (requires a running Milvus Standalone — start it with `node main.js milvus-up`; override
+// the address with MILVUS_URI, default http://127.0.0.1:19530)
 
-import type { MilvusRow } from "#/kb/milvus-rpc.ts";
+// Point the client at the throwaway collection BEFORE config.ts is imported (loadEnvFile
+// does not override an already-set process.env value).
+import type { MilvusRow } from "#/kb/milvus.ts";
 
-const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+process.env.MILVUS_URI ||= "http://127.0.0.1:19530";
+process.env.MILVUS_COLLECTION = "smoke";
 
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-function freePort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const srv = net.createServer();
-    srv.once("error", reject);
-    srv.listen(0, "127.0.0.1", () => {
-      const addr = srv.address();
-      const port = typeof addr === "object" && addr !== null ? addr.port : 0;
-      srv.close(() => {
-        if (port === 0) {
-          reject(new Error("could not allocate a free port"));
-        } else {
-          resolve(port);
-        }
-      });
-    });
-  });
-}
-
 async function main(): Promise<void> {
-  const port = await freePort();
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "smoke-milvus-"));
-  const db = path.join(dir, "kb.db");
+  const milvus = await import("#/kb/milvus.ts");
 
-  // Point the bridge client at the throwaway server BEFORE config.ts is imported (loadEnvFile
-  // does not override an already-set process.env value).
-  process.env.MILVUS_RPC_URL = `127.0.0.1:${port}`;
-
-  const server: ChildProcess = spawn(
-    "uv",
-    [
-      "run",
-      "python",
-      path.join(ROOT, "src", "milvus", "server.py"),
-      "--uri",
-      db,
-      "--port",
-      String(port),
-      "--collection",
-      "smoke",
-    ],
-    { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] },
-  );
-  let serverLog = "";
-  server.stdout?.on("data", (chunk: Buffer) => {
-    serverLog += chunk.toString();
-  });
-  server.stderr?.on("data", (chunk: Buffer) => {
-    serverLog += chunk.toString();
-  });
-
-  const milvus = await import("#/kb/milvus-rpc.ts");
+  // Wait for Milvus to accept calls (a freshly started Standalone needs a moment). count()
+  // fails fast with a connection error while it is down, so polling is cheap.
+  let ready = false;
+  for (let i = 0; i < 24; i += 1) {
+    try {
+      await milvus.count();
+      ready = true;
+      break;
+    } catch {
+      await sleep(500);
+    }
+  }
+  if (!ready) {
+    throw new Error(
+      `Milvus Standalone did not answer on ${process.env.MILVUS_URI}; start it first: node main.js milvus-up`,
+    );
+  }
+  console.log(`Milvus ready on ${process.env.MILVUS_URI} (collection=smoke)`);
 
   try {
-    // Wait for the bridge to accept calls (Milvus Lite init takes a moment). count() fails fast
-    // with UNAVAILABLE until the server is listening, so polling is cheap.
-    let ready = false;
-    for (let i = 0; i < 60; i += 1) {
-      await sleep(250);
-      if (server.exitCode !== null) {
-        break;
-      }
-      try {
-        await milvus.count();
-        ready = true;
-        break;
-      } catch {
-        // not ready yet
-      }
-    }
-    if (!ready) {
-      throw new Error(
-        `bridge did not become ready on :${port}; log:\n${serverLog}`,
-      );
-    }
-    console.log(`bridge ready on 127.0.0.1:${port} (collection=smoke)`);
+    // Clean slate: a previous failed run may have left rows behind.
+    await milvus.drop();
 
     const rows: MilvusRow[] = [
       {
@@ -181,15 +128,10 @@ async function main(): Promise<void> {
     }
 
     console.log(
-      "GO: Milvus dense bridge (gRPC + Milvus Lite) upsert/search/count/drop all live",
+      "GO: Milvus Standalone (Node SDK) upsert/search/count/drop all live",
     );
   } finally {
-    server.kill("SIGTERM");
-    await sleep(300);
-    if (server.exitCode === null) {
-      server.kill("SIGKILL");
-    }
-    fs.rmSync(dir, { recursive: true, force: true });
+    await milvus.close();
   }
 }
 

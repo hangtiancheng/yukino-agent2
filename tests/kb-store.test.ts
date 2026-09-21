@@ -12,7 +12,7 @@ vi.mock("#/db/repository.ts", () => ({
   knowledgeRevision: mocks.knowledgeRevision,
   listVectorizedChunks: mocks.listVectorizedChunks,
 }));
-vi.mock("#/kb/milvus-rpc.ts", () => ({
+vi.mock("#/kb/milvus.ts", () => ({
   milvusEnabled: mocks.milvusEnabled,
 }));
 

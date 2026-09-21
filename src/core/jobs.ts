@@ -85,13 +85,13 @@ export const JOBS: Record<string, JobSpec> = Object.fromEntries(
     ),
     spec(
       "milvus-up",
-      "Start the Milvus dense bridge",
+      "Start Milvus Standalone",
       taskRunner("milvus-up"),
-      "Optional; then set MILVUS_RPC_URL=127.0.0.1:50051 to route dense retrieval through Milvus Lite",
+      "Optional; requires an RPM/DEB (systemd) or Docker install, then set MILVUS_URI=http://127.0.0.1:19530 to route dense retrieval through Milvus",
     ),
     spec(
       "milvus-down",
-      "Stop the Milvus dense bridge",
+      "Stop Milvus Standalone",
       taskRunner("milvus-down"),
       "—",
     ),

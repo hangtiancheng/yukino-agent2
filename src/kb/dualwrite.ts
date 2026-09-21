@@ -1,10 +1,10 @@
 // Dual write: relational rows first (pending), then dense vectors, then mark done.
 //
-// Legacy mode (MILVUS_RPC_URL empty) stores the embedding on the SQLite row. Milvus mode
-// upserts the dense vector into Milvus through the gRPC bridge and records only the vector
-// id + status on the row (the embedding column stays null). See src/kb/milvus-rpc.ts.
+// Legacy mode (MILVUS_URI empty) stores the embedding on the SQLite row. Milvus mode
+// upserts the dense vector into Milvus Standalone through the Node SDK and records only the
+// vector id + status on the row (the embedding column stays null). See src/kb/milvus.ts.
 import type { Chunk } from "./documents.ts";
-import * as milvus from "./milvus-rpc.ts";
+import * as milvus from "./milvus.ts";
 
 import { settings } from "#/config.ts";
 import { embedTexts } from "#/core/embeddings.ts";

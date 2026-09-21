@@ -2,14 +2,11 @@
 dependencies = [
   # Not imported directly: transformers.Trainer (scripts/train/py/train.py)
   # pulls it in at runtime.
-  "accelerate>=1.15.0", # protoc + the grpc python plugins for `node main.js milvus-proto`.
-  "grpcio-tools>=1.84.0", # pymilvus's local-file backend (data/milvus/kb.db, no docker).
-  "milvus-lite>=3.2.1",
+  "accelerate>=1.15.0",
   "numpy>=2.5.3", # Not imported directly: torch.onnx.export(dynamo=True) in
   # scripts/train/py/export_onnx.py needs it at runtime.
   "onnx>=1.22.0",
   "onnxruntime>=1.30.0",
-  "pymilvus>=3.0.1",
   "ruff>=0.16.7",
   "scikit-learn>=1.9.1",
   "torch>=2.14.0",
@@ -21,34 +18,18 @@ readme = "README.md"
 requires-python = ">=3.13"
 version = "0.0.0"
 
-[dependency-groups]
-dev = [
-  # Typed grpc stubs: the mypy-protobuf-generated .pyi files are written
-  # against a typed `grpc`, and src/milvus/server.py checks against both.
-  "grpc-stubs>=1.53", # protoc plugin generating the .pyi stubs next to the pb2 modules, so
-  # src/milvus/server.py type-checks against the generated message classes.
-  "mypy-protobuf>=3.6",
-]
-
 # uv syncs the dependencies but never builds/installs this repo as a Python package (it is a Node
-# project). The remaining Python subtrees are scripts run in place, e.g. `uv run python
-# scripts/train/py/train.py` or `uv run python src/milvus/server.py` (see the main.js tasks).
+# project). The remaining Python subtree is scripts run in place, e.g. `uv run python
+# scripts/train/py/train.py` (see the main.js tasks).
 [tool.uv]
 package = false
 
-# Generated protobuf/gRPC stubs (regenerate via `node main.js milvus-proto`): machine-generated,
-# never hand-edited, so ruff check/format must leave them byte-for-byte alone.
-# force-exclude: honor the exclusion even when the files are passed explicitly on the CLI.
 [tool.ruff]
-extend-exclude = [
-  "src/milvus/pb",
-  ".agents",
-]
-force-exclude = true
+extend-exclude = [".agents"]
 
 # Default rules (E4/E7/E9/F) plus import sorting and the modernization/bugbear/async rules.
 # E501 stays off: line width is `ruff format`'s job, and the pre-existing
-# training/milvus comments intentionally exceed the format width.
+# training comments intentionally exceed the format width.
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I", "UP", "B", "ASYNC"]
 
@@ -56,27 +37,14 @@ select = ["E4", "E7", "E9", "F", "I", "UP", "B", "ASYNC"]
 # Pre-existing training scripts use `l` as a jsonl-line loop variable; kept as authored.
 "scripts/train/py/*.py" = ["E741"]
 
-# Strict typing for the vendored train training pipeline (scripts/train/py) and the Milvus gRPC
-# bridge (src/milvus). Scoped via `files` so a bare `mypy` run targets only these typed subtrees
-# and leaves the other loose scripts alone.
+# Strict typing for the vendored train training pipeline (scripts/train/py). Scoped via `files`
+# so a bare `mypy` run targets only this typed subtree and leaves the other loose scripts alone.
 [tool.mypy]
-files = ["scripts/train/py", "src/milvus"]
+files = ["scripts/train/py"]
 python_version = "3.13"
 strict = true
-# The generated pb2 modules are machine-generated (`node main.js milvus-proto`); mypy consumes the
-# .pyi stubs generated next to them instead of type-checking the .py sources.
-exclude = ["src/milvus/pb/kb_store_pb2(_grpc)?\\.py$"]
-# server.py imports the generated modules flat (`import kb_store_pb2`), the way the
-# grpc-generated code does, so the pb directory is a module search root.
-mypy_path = "src/milvus/pb"
 
 # scikit-learn and onnxruntime ship no py.typed marker / stubs; treat them as Any at the boundary.
 [[tool.mypy.overrides]]
 ignore_missing_imports = true
 module = ["sklearn.*", "onnxruntime.*"]
-
-# pymilvus ships no py.typed marker / stubs; treat it as Any at the boundary. grpc is typed
-# via grpc-stubs and google.protobuf via types-protobuf (pulled in by mypy-protobuf).
-[[tool.mypy.overrides]]
-ignore_missing_imports = true
-module = ["pymilvus.*"]

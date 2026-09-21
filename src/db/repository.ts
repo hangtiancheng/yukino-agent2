@@ -411,8 +411,8 @@ export async function knowledgeRevision(): Promise<string> {
 }
 
 export async function listVectorizedChunks(): Promise<VectorizedChunk[]> {
-  // No `embedding != null` filter: when the Milvus bridge is enabled the dense vectors live
-  // in Milvus and this column stays null, but the in-process BM25 index still needs the text.
+  // No `embedding != null` filter: when Milvus is enabled the dense vectors live in Milvus
+  // Standalone and this column stays null, but the in-process BM25 index still needs the text.
   const rows = await prisma.knowledgeChunk.findMany({
     where: { vectorizeStatus: "done" },
     orderBy: { id: "asc" },

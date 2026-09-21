@@ -1,2 +1,4 @@
 generated/
 pnpm-lock.yaml
+# Vendored official Milvus compose file — kept byte-identical to the release asset.
+deploy/

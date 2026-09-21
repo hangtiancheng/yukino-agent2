@@ -13,8 +13,8 @@
 //      inflating recall).
 //
 // KB text comes from the knowledge_chunks rows (the same rows retrieval uses): dense vectors
-// may live in Milvus through the bridge (src/kb/milvus-rpc.ts), but text lookups stay on the
-// relational rows in both modes. Run: node scripts/validate-eval-rag.ts
+// may live in Milvus Standalone (src/kb/milvus.ts), but text lookups stay on the relational
+// rows in both modes. Run: node scripts/validate-eval-rag.ts
 import fs from "node:fs";
 import path from "node:path";
 

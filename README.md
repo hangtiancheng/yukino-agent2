@@ -29,45 +29,37 @@ The Python project used MySQL + Milvus Standalone. This server uses SQLite for r
   vector database;
 - the LangGraph checkpointer uses `CHECKPOINTER_DB_PATH`.
 
-### Optional: Milvus dense bridge
+### Optional: Milvus Standalone dense store
 
-Dense retrieval can instead run against real Milvus (Lite, no docker) through a Python gRPC
-bridge — `src/milvus/server.py` wraps `pymilvus` behind `src/milvus/kb_store.proto`, and
-`src/kb/milvus-rpc.ts` is the Node client:
+Dense retrieval can instead run against a real Milvus Standalone — the Node server talks to
+it directly through the official Node SDK (`src/kb/milvus.ts`, gRPC on `:19530`); there is no
+bridge process. Install Milvus Standalone first, either way is supported by
+`node main.js milvus-up/down`:
 
-```bash
-node main.js milvus-up                          # start the bridge on 127.0.0.1:50051
-echo 'MILVUS_RPC_URL=127.0.0.1:50051' >> .env   # then restart the Node server
-node main.js kb-vectorize                       # re-embed: vectors now upsert into Milvus
-node scripts/smoke-milvus.ts                    # end-to-end smoke (throwaway collection)
-node main.js milvus-down                        # stop the bridge
-```
-
-With `MILVUS_RPC_URL` set, Milvus is the authoritative dense store (the SQLite `embedding`
-column stays null; `vector_id` + status are still recorded) and a down bridge surfaces as an
-error instead of silently degrading. BM25 always stays in-process, and `hybrid` fuses the two
-with reciprocal-rank fusion — unlike the Python original, which ran dense + BM25 + hybrid all
-inside Milvus Standalone (its BM25 Function needs Standalone; Lite does not support it).
-
-### Regenerating the protobuf stubs
-
-After editing `src/milvus/kb_store.proto`, regenerate the Python stubs. All four artifacts land
-in `src/milvus/pb/` (machine-generated, never hand-edited; the `.pyi` stubs keep
-`src/milvus/server.py` mypy-strict clean):
+1. **RPM/DEB package (preferred)** — download `milvus_<ver>-1_<arch>.deb` / `.rpm` for your
+   architecture from the Milvus releases page, install it with your package manager
+   (`apt install -y ./milvus_*.deb` or `yum install -y ./milvus_*.rpm`), which registers the
+   `milvus.service` systemd unit that `milvus-up` starts and health-checks.
+2. **Docker Compose (fallback)** — with Docker installed, `milvus-up` runs the vendored
+   official compose file `deploy/milvus/docker-compose.yml` (etcd + MinIO + standalone,
+   volumes under `deploy/milvus/volumes/`).
 
 ```bash
-node main.js milvus-proto
-# equivalent to:
-# uv run python -m grpc_tools.protoc -I src/milvus \
-#   --python_out=src/milvus/pb --grpc_python_out=src/milvus/pb \
-#   --mypy_out=src/milvus/pb --mypy_grpc_out=src/milvus/pb \
-#   src/milvus/kb_store.proto
+node main.js milvus-up                            # start + wait for healthz (systemd or docker)
+echo 'MILVUS_URI=http://127.0.0.1:19530' >> .env  # then restart the Node server
+node main.js kb-vectorize                         # re-embed: vectors now upsert into Milvus
+node scripts/smoke-milvus.ts                      # end-to-end smoke (throwaway collection)
+node main.js milvus-down                          # stop Milvus Standalone
 ```
 
-Outputs: `kb_store_pb2.py` / `kb_store_pb2_grpc.py` (runtime) and `kb_store_pb2.pyi` /
-`kb_store_pb2_grpc.pyi` (type stubs, via `mypy-protobuf`). The bridge imports them flat
-(`import kb_store_pb2`), so `src/milvus/pb` — not `src/milvus` — is added to `sys.path` at
-runtime and to mypy's module search path.
+With `MILVUS_URI` set, Milvus is the authoritative dense store (the SQLite `embedding`
+column stays null; `vector_id` + status are still recorded) and a down Milvus surfaces as an
+error instead of silently degrading. The collection is created lazily on the first upsert
+with the embedding dimension inferred from the data (model-agnostic), Strong consistency
+(matches the always-consistent legacy store), and `MILVUS_TOKEN` covers a secured instance.
+BM25 always stays in-process, and `hybrid` fuses the two with reciprocal-rank fusion —
+unlike the Python original, which ran dense + BM25 + hybrid all inside Milvus (its BM25
+Function path was not ported).
 
 ## train topic classifier (hybrid Python/TypeScript)
 

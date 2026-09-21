@@ -30,7 +30,7 @@ vi.mock("#/db/repository.ts", () => ({
   markChunkVectorizedExternal: mocks.markChunkVectorizedExternal,
   rependChunkTexts: mocks.rependChunkTexts,
 }));
-vi.mock("#/kb/milvus-rpc.ts", () => ({
+vi.mock("#/kb/milvus.ts", () => ({
   milvusEnabled: mocks.milvusEnabled,
   upsert: mocks.upsert,
   flush: mocks.flush,

@@ -11,7 +11,7 @@
 ## Python project layout (single uv project)
 
 - ONE uv project at the repo root: `pyproject.toml` + `uv.lock` + `.python-version`
-  (3.13) cover every Python subtree — `scripts/train/py` and `src/milvus`. Do not
+  (3.13) cover every Python subtree — `scripts/train/py`. Do not
   create per-directory `pyproject.toml` / `uv.lock` / `.python-version` files.
 - Python gates: `uv run ruff check .`, `uv run ruff format --check .`,
   `uv run --with mypy mypy` (strict; scoped via `files`). There are no Python
@@ -28,17 +28,22 @@
 - TS gates: `pnpm typecheck`, `pnpm lint`, `pnpm test` (vitest picks up
   `mcp/tests/*.test.ts` together with the root `tests/`).
 
-## Milvus migration (Python Milvus => Node -> gRPC -> Milvus Lite)
+## Milvus migration (Python Milvus => Node -> Milvus Standalone)
 
 The Python original ran Milvus Standalone with dense + sparse(BM25) + hybrid all inside
 Milvus. This stack migrated the dense path instead of avoiding it:
 
-- Node (`src/kb/store.ts`, `src/kb/dualwrite.ts`) -> gRPC client (`src/kb/milvus-rpc.ts`,
-  `@grpc/grpc-js` + `@grpc/proto-loader`) -> Python bridge (`src/milvus/server.py`,
-  contract in `src/milvus/kb_store.proto`) -> Milvus Lite (`data/milvus/kb.db`, no docker).
-- Opt-in via `MILVUS_RPC_URL` (empty = legacy in-process cosine over SQLite embeddings).
-  When set, Milvus is the authoritative dense store; `node main.js milvus-up/down`, smoke with
-  `node scripts/smoke-milvus.ts`.
+- Node (`src/kb/store.ts`, `src/kb/dualwrite.ts`) -> official Node SDK client
+  (`src/kb/milvus.ts`, `@zilliz/milvus2-sdk-node`) -> Milvus Standalone (gRPC
+  `127.0.0.1:19530`). No bridge process: the old Python gRPC bridge + Milvus Lite
+  (`src/milvus/`) was replaced by the direct SDK connection.
+- Opt-in via `MILVUS_URI` (empty = legacy in-process cosine over SQLite embeddings;
+  `MILVUS_TOKEN` for a secured instance). When set, Milvus is the authoritative dense
+  store. Standalone itself is installed via RPM/DEB (systemd `milvus.service`, preferred)
+  or the vendored `deploy/milvus/docker-compose.yml` (fallback); `node main.js
+milvus-up/down` drives either install and waits on `http://127.0.0.1:9091/healthz`,
+  smoke with `node scripts/smoke-milvus.ts`.
 - BM25 stays in-process (CJK bigrams over `knowledge_chunks` text); `hybrid` fuses dense +
   BM25 with reciprocal-rank fusion in Node. Collection dim is inferred from the first
-  upserted embedding (model-agnostic, never hardcoded).
+  upserted embedding (model-agnostic, never hardcoded); the collection is created with
+  Strong consistency so the dual-write count check stays deterministic.

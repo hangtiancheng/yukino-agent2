@@ -1,15 +1,15 @@
-// Knowledge vector store: dense retrieval over the Milvus bridge, BM25 in-process.
+// Knowledge vector store: dense retrieval over Milvus Standalone, BM25 in-process.
 //
 // The Python original (~/Downloads/python app/kb/milvus_client.py) ran Milvus Standalone and
 // pushed dense + sparse(BM25 Function) + hybrid(RRFRanker) all inside Milvus. This port keeps
 // the same four strategies (vector / bm25 / hybrid / hybrid_rerank) but splits the backends:
-//   - dense ANN goes to Milvus Lite through the Python gRPC bridge (src/milvus/server.py)
-//     when MILVUS_RPC_URL is set, and Milvus is then the authoritative vector store;
+//   - dense ANN goes to Milvus Standalone through the official Node SDK (src/kb/milvus.ts)
+//     when MILVUS_URI is set, and Milvus is then the authoritative vector store;
 //   - BM25 is always computed in-process over the knowledge_chunks text (CJK-aware bigrams);
 //   - hybrid fuses the two with the existing reciprocal-rank-fusion code below.
-// With MILVUS_RPC_URL empty, dense falls back to the legacy in-process cosine over SQLite
-// embeddings, so the server still runs without the bridge. See src/milvus/kb_store.proto.
-import * as milvus from "./milvus-rpc.ts";
+// With MILVUS_URI empty, dense falls back to the legacy in-process cosine over SQLite
+// embeddings, so the server still runs without Milvus.
+import * as milvus from "./milvus.ts";
 
 import { settings } from "#/config.ts";
 import { knowledgeRevision, listVectorizedChunks } from "#/db/repository.ts";
@@ -140,9 +140,9 @@ export async function denseSearch(
   topK: number,
   category: string | null = null,
 ): Promise<KnowledgeHit[]> {
-  // Milvus is the authoritative dense store when the bridge is configured; the gRPC error
-  // propagates (no in-process fallback) so a down bridge surfaces instead of silently
-  // degrading. MilvusHit is structurally a KnowledgeHit (rerank_score is filled later).
+  // Milvus is the authoritative dense store when it is configured; the SDK error propagates
+  // (no in-process fallback) so a down Milvus surfaces instead of silently degrading.
+  // MilvusHit is structurally a KnowledgeHit (rerank_score is filled later).
   if (milvus.milvusEnabled()) {
     return milvus.search(vector, topK, category);
   }
