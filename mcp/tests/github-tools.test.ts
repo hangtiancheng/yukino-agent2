@@ -607,6 +607,101 @@ describe("argument validation", () => {
   });
 });
 
+describe("lenient boolean arguments", () => {
+  // Some MCP clients stringify JSON booleans ("false" instead of false); the
+  // tools must accept the string spellings and normalize them to real
+  // booleans before anything reaches the GitHub API.
+
+  it("create_repo coerces stringified booleans before hitting the API", async () => {
+    configureToken();
+    const fetchStub = stubFetchRoutes([
+      {
+        method: "POST",
+        url: `${API_BASE}/user/repos`,
+        status: 201,
+        json: { id: 1, name: "repo", full_name: "octocat/repo" },
+      },
+    ]);
+
+    for (const [wire, expected] of [
+      ["false", false],
+      ["true", true],
+    ] as const) {
+      const result = await callTool("github_create_repo", {
+        name: "repo",
+        private: wire,
+      });
+
+      expect(result.isError).toBeUndefined();
+      // GitHub receives a real JSON boolean, not the client's string.
+      expect(JSON.parse(fetchStub.lastCall().body ?? "")).toEqual({
+        name: "repo",
+        private: expected,
+      });
+    }
+  });
+
+  it("create_pull_request coerces a stringified draft flag", async () => {
+    configureToken();
+    const fetchStub = stubFetchRoutes([
+      {
+        method: "POST",
+        url: `${API_BASE}/repos/${REPO}/pulls`,
+        status: 201,
+        json: { number: 3, title: "t", state: "open" },
+      },
+    ]);
+
+    const draft = await callTool("github_create_pull_request", {
+      repo: REPO,
+      title: "t",
+      head: "feature",
+      draft: "true",
+    });
+    expect(draft.isError).toBeUndefined();
+    expect(JSON.parse(fetchStub.lastCall().body ?? "")).toEqual({
+      title: "t",
+      head: "feature",
+      draft: true,
+    });
+
+    // "false" normalizes to a real false, which the client omits.
+    await callTool("github_create_pull_request", {
+      repo: REPO,
+      title: "t",
+      head: "feature",
+      draft: "false",
+    });
+    expect(JSON.parse(fetchStub.lastCall().body ?? "")).toEqual({
+      title: "t",
+      head: "feature",
+    });
+  });
+
+  it("strings that are not boolean spellings stay invalid", async () => {
+    configureToken();
+
+    const result = await callTool("github_create_repo", {
+      name: "repo",
+      private: "yes",
+    });
+
+    expect(result.isError).toBe(true);
+    expect(firstText(result)).toContain("Invalid arguments");
+  });
+
+  it("the published schema still advertises the boolean type", async () => {
+    const { tools } = await client.listTools();
+    const createRepo = tools.find((tool) => tool.name === "github_create_repo");
+    const privateSchema = parseInputSchema(createRepo?.inputSchema).properties
+      .private;
+
+    // boolean | "true" | "false" (+ null): the boolean branch must survive
+    // the zod -> JSON Schema conversion.
+    expect(JSON.stringify(privateSchema)).toContain('"boolean"');
+  });
+});
+
 describe("custom base URL", () => {
   it("is honoured by the HTTP transport", async () => {
     // GITHUB_BASE_URL points the HTTP transport at any GitHub-compatible API

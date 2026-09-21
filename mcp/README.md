@@ -188,6 +188,11 @@ credentials the org endpoint is attempted.
 - The HTTP transport follows API redirects (renamed repositories answer 301);
   Node's fetch drops the Authorization header when a redirect leaves the API
   origin, so the token cannot leak to a third host.
+- Boolean arguments (`private` on `github_create_repo`, `draft` on
+  `github_create_pull_request`) also accept the exact strings `"true"` /
+  `"false"` and normalize them to real booleans: some MCP clients stringify
+  JSON booleans on the wire, which strict validation would reject with a
+  `-32602` error. Any other string stays invalid.
 
 ## Authentication (GitHub)
 

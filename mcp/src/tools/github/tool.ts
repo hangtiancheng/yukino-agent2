@@ -47,6 +47,16 @@ const WRITE_ANNOTATIONS = {
 
 const IssueStateSchema = z.enum(["open", "closed", "all"]);
 
+/**
+ * Some MCP clients stringify JSON booleans on the wire ("false" instead of
+ * false), which a strict z.boolean() rejects with a -32602 validation error.
+ * Accept the exact string spellings as well and normalize to a real boolean;
+ * any other string stays invalid.
+ */
+const LenientBooleanSchema = z
+  .union([z.boolean(), z.enum(["true", "false"])])
+  .transform((value): boolean => value === true || value === "true");
+
 const ReadFileSchema = {
   repo: z.string().min(1).describe(REPO_DESCRIPTION),
   file_path: z
@@ -104,12 +114,9 @@ const CreateRepoSchema = {
     .string()
     .nullish()
     .describe("Optional repository description."),
-  private: z
-    .boolean()
-    .nullish()
-    .describe(
-      "true for a private repository, false for public. Defaults to the account default.",
-    ),
+  private: LenientBooleanSchema.nullish().describe(
+    "true for a private repository, false for public. Defaults to the account default.",
+  ),
 };
 
 const GetRepoSchema = {
@@ -215,10 +222,9 @@ const CreatePullRequestSchema = {
       "Branch to merge into. Defaults to the repository's default branch.",
     ),
   body: z.string().nullish().describe("Optional pull request body (markdown)."),
-  draft: z
-    .boolean()
-    .default(false)
-    .describe("true to open the pull request as a draft."),
+  draft: LenientBooleanSchema.default(false).describe(
+    "true to open the pull request as a draft.",
+  ),
 };
 
 const CreateBranchSchema = {
