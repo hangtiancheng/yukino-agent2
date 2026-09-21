@@ -27,6 +27,7 @@ import {
 } from "./core/observability.ts";
 import { assertDbReady, closeDb } from "./db/client.ts";
 import * as runtime from "./graph/runtime.ts";
+import * as milvus from "./kb/milvus.ts";
 import { childLogger, flushLogs, logger } from "./logger.ts";
 
 const log = childLogger("server");
@@ -83,10 +84,37 @@ function checkContextBudget(): void {
   }
 }
 
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+// Warm up Milvus before serving (same as the Python original's lifespan probe): a collection
+// load completes asynchronously server-side and searches against a not-yet-ready collection
+// answer silently empty, so probe the BM25 path until a hit comes back. Best-effort — a down
+// Milvus or an empty KB only warns; startup is never blocked past the probe budget.
+async function warmupMilvus(): Promise<void> {
+  if (!milvus.milvusEnabled()) {
+    return;
+  }
+  try {
+    for (let attempt = 0; attempt < 15; attempt += 1) {
+      const hits = await milvus.bm25Search("shipping fee", 1, null);
+      if (hits.length > 0) {
+        log.info("milvus warmup complete; collection searchable");
+        return;
+      }
+      await sleep(1_000);
+    }
+    log.warn("milvus warmup timed out (15s) with no hits; continuing");
+  } catch (error) {
+    log.warn({ err: error }, "milvus warmup failed; continuing");
+  }
+}
+
 export async function startServer(): Promise<void> {
   await assertDbReady();
   initObservability();
   checkContextBudget();
+  await warmupMilvus();
   runtime.initGraph();
   const app = createApp();
   const server = serve({

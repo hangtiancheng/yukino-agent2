@@ -411,8 +411,9 @@ export async function knowledgeRevision(): Promise<string> {
 }
 
 export async function listVectorizedChunks(): Promise<VectorizedChunk[]> {
-  // No `embedding != null` filter: when Milvus is enabled the dense vectors live in Milvus
-  // Standalone and this column stays null, but the in-process BM25 index still needs the text.
+  // No `embedding != null` filter: in Milvus mode the vectors live in Milvus Standalone and
+  // this column stays null. The rows only feed the legacy in-process index (store.ts), which
+  // tolerates empty embeddings (dense cosine skips them) and scores BM25 off the text.
   const rows = await prisma.knowledgeChunk.findMany({
     where: { vectorizeStatus: "done" },
     orderBy: { id: "asc" },

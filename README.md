@@ -23,15 +23,15 @@ Jina/Cohere shaped). Intent and summary slots fall back to the chat group unless
 The Python project used MySQL + Milvus Standalone. This server uses SQLite for relational data:
 
 - relational tables live in `data/yukino-agent2.db` (Prisma schema in `prisma/schema.prisma`); run `pnpm db:migrate` before the first start;
-- by default, dense embeddings are stored on `knowledge_chunks` and scored in-process;
-- BM25 is computed in-process with CJK bigram tokenization, so the four retrieval
-  strategies (`vector` / `bm25` / `hybrid` / `hybrid_rerank`) keep working without a
-  vector database;
+- without `MILVUS_URI` (legacy mode), dense embeddings are stored on `knowledge_chunks` and
+  scored in-process, and BM25 is computed in-process with CJK bigram tokenization, so the
+  four retrieval strategies (`vector` / `bm25` / `hybrid` / `hybrid_rerank`) keep working
+  without a vector database;
 - the LangGraph checkpointer uses `CHECKPOINTER_DB_PATH`.
 
-### Optional: Milvus Standalone dense store
+### Optional: Milvus Standalone vector store
 
-Dense retrieval can instead run against a real Milvus Standalone — the Node server talks to
+Retrieval can instead run against a real Milvus Standalone — the Node server talks to
 it directly through the official Node SDK (`src/kb/milvus.ts`, gRPC on `:19530`); there is no
 bridge process. Install Milvus Standalone first, either way is supported by
 `node main.js milvus-up/down`:
@@ -47,19 +47,22 @@ bridge process. Install Milvus Standalone first, either way is supported by
 ```bash
 node main.js milvus-up                            # start + wait for healthz (systemd or docker)
 echo 'MILVUS_URI=http://127.0.0.1:19530' >> .env  # then restart the Node server
-node main.js kb-vectorize                         # re-embed: vectors now upsert into Milvus
+node main.js kb-vectorize                         # re-embed: rows now upsert into Milvus
 node scripts/smoke-milvus.ts                      # end-to-end smoke (throwaway collection)
 node main.js milvus-down                          # stop Milvus Standalone
 ```
 
-With `MILVUS_URI` set, Milvus is the authoritative dense store (the SQLite `embedding`
+With `MILVUS_URI` set, Milvus is the authoritative vector store (the SQLite `embedding`
 column stays null; `vector_id` + status are still recorded) and a down Milvus surfaces as an
-error instead of silently degrading. The collection is created lazily on the first upsert
-with the embedding dimension inferred from the data (model-agnostic), Strong consistency
-(matches the always-consistent legacy store), and `MILVUS_TOKEN` covers a secured instance.
-BM25 always stays in-process, and `hybrid` fuses the two with reciprocal-rank fusion —
-unlike the Python original, which ran dense + BM25 + hybrid all inside Milvus (its BM25
-Function path was not ported).
+error instead of silently degrading. Behaviour matches the Python original: dense ANN,
+native BM25 full-text search (a BM25 Function derives the `sparse` field from the
+analyzer-enabled `text` field, written as category + questions + answer on every upsert)
+and `hybrid` RRF fusion all run inside Milvus. The collection is created lazily on the
+first upsert with the embedding dimension inferred from the data (model-agnostic), Strong
+consistency (matches the always-consistent legacy store), and `MILVUS_TOKEN` covers a
+secured instance. A collection created by an older dense-only build is rejected on use with
+rebuild instructions (`node main.js kb-reset && node main.js kb-build && node main.js
+kb-vectorize`).
 
 ## train topic classifier (hybrid Python/TypeScript)
 

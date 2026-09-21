@@ -1,4 +1,7 @@
-// Rerank upstream client (Jina / Cohere shaped /rerank endpoint, not OpenAI protocol).
+// Rerank upstream client (not OpenAI protocol). Two wire shapes, picked via RERANK_PROTOCOL:
+//   - "jina" (default, what the Python original used): Jina/Cohere-shaped POST {base}/rerank;
+//   - "dashscope": the Aliyun DashScope-native text-rerank service, which some managed
+//     gateways expose instead of a /rerank endpoint (the OpenAI-compatible tree 404s).
 import { z } from "zod";
 
 import { settings } from "#/config.ts";
@@ -8,18 +11,41 @@ const RETRY_STATUS = new Set([429, 500, 502, 503, 504]);
 const RETRIES = 3;
 const BACKOFF_MS = 1500;
 
+function isDashscope(): boolean {
+  return settings.rerankProtocol === "dashscope";
+}
+
 function rerankUrl(): string {
-  // Accept bases with or without a version segment; only append /v1 when missing.
   let base = settings.rerankBaseUrl.replace(/\/+$/, "");
+  if (isDashscope()) {
+    // DashScope-native service path. Strip compat-mode/version suffixes so a base shared
+    // with the chat/embed slots (…/compatible-mode/v1) still resolves to the gateway root.
+    for (const suffix of ["/v1", "/v2", "/compatible-mode", "/compatible-api"]) {
+      if (base.endsWith(suffix)) {
+        base = base.slice(0, -suffix.length);
+      }
+    }
+    if (!base.endsWith("/api")) {
+      base += "/api";
+    }
+    return `${base}/v1/services/rerank/text-rerank/text-rerank`;
+  }
+  // Accept bases with or without a version segment; only append /v1 when missing.
   if (!VERSION_SEG.test(base)) {
     base += "/v1";
   }
   return `${base}/rerank`;
 }
 
+const resultItemSchema = z.object({
+  index: z.number(),
+  relevance_score: z.number(),
+});
+// DashScope nests the results under `output`; jina/cohere return them top-level.
 const rerankResponseSchema = z.object({
-  results: z
-    .array(z.object({ index: z.number(), relevance_score: z.number() }))
+  results: z.array(resultItemSchema).optional(),
+  output: z
+    .object({ results: z.array(resultItemSchema).optional() })
     .optional(),
 });
 
@@ -77,12 +103,18 @@ export async function rerank(
   if (docs.length === 0) {
     return [];
   }
-  const body = {
-    model: settings.rerankModel,
-    query,
-    documents: docs,
-    top_n: topN || docs.length,
-  };
+  const body = isDashscope()
+    ? {
+        model: settings.rerankModel,
+        input: { query, documents: docs },
+        parameters: { top_n: topN || docs.length, return_documents: false },
+      }
+    : {
+        model: settings.rerankModel,
+        query,
+        documents: docs,
+        top_n: topN || docs.length,
+      };
   const resp = await post(rerankUrl(), body);
   if (!resp.ok) {
     throw new Error(
@@ -90,7 +122,7 @@ export async function rerank(
     );
   }
   const data = rerankResponseSchema.parse(await resp.json());
-  const ranked = (data.results ?? [])
+  const ranked = (data.results ?? data.output?.results ?? [])
     .map((r): [number, number] => [r.index, Number(r.relevance_score)])
     .sort((a, b) => b[1] - a[1]);
   return topN ? ranked.slice(0, topN) : ranked;

@@ -1,11 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { bm25Search, denseSearch, invalidateVectorCache } from "#/kb/store.ts";
+import {
+  bm25Search,
+  denseSearch,
+  hybridSearch,
+  invalidateVectorCache,
+} from "#/kb/store.ts";
 
 const mocks = vi.hoisted(() => ({
   knowledgeRevision: vi.fn(),
   listVectorizedChunks: vi.fn(),
   milvusEnabled: vi.fn(() => false),
+  milvusBm25Search: vi.fn(),
+  milvusHybridSearch: vi.fn(),
 }));
 
 vi.mock("#/db/repository.ts", () => ({
@@ -14,6 +21,8 @@ vi.mock("#/db/repository.ts", () => ({
 }));
 vi.mock("#/kb/milvus.ts", () => ({
   milvusEnabled: mocks.milvusEnabled,
+  bm25Search: mocks.milvusBm25Search,
+  hybridSearch: mocks.milvusHybridSearch,
 }));
 
 function row(
@@ -39,7 +48,46 @@ describe("knowledge store", () => {
     mocks.knowledgeRevision.mockReset();
     mocks.knowledgeRevision.mockResolvedValue("revision");
     mocks.listVectorizedChunks.mockReset();
+    mocks.milvusEnabled.mockReset();
     mocks.milvusEnabled.mockReturnValue(false);
+    mocks.milvusBm25Search.mockReset();
+    mocks.milvusHybridSearch.mockReset();
+  });
+
+  it("routes BM25 to Milvus native full-text search when Milvus is the store", async () => {
+    mocks.milvusEnabled.mockReturnValue(true);
+    const hit = {
+      id: 9,
+      score: 2.5,
+      question: "q",
+      answer: "a",
+      section_path: "s",
+      content_type: "faq",
+      category: "shipping",
+    };
+    mocks.milvusBm25Search.mockResolvedValue([hit]);
+
+    const hits = await bm25Search("shipping", 5, "shipping");
+
+    expect(mocks.milvusBm25Search).toHaveBeenCalledWith("shipping", 5, "shipping");
+    expect(hits).toEqual([hit]);
+    expect(mocks.listVectorizedChunks).not.toHaveBeenCalled();
+  });
+
+  it("routes hybrid search to Milvus RRF fusion when Milvus is the store", async () => {
+    mocks.milvusEnabled.mockReturnValue(true);
+    mocks.milvusHybridSearch.mockResolvedValue([]);
+
+    await hybridSearch([1, 0], "shipping", 10, 50, null);
+
+    expect(mocks.milvusHybridSearch).toHaveBeenCalledWith(
+      [1, 0],
+      "shipping",
+      10,
+      50,
+      null,
+    );
+    expect(mocks.listVectorizedChunks).not.toHaveBeenCalled();
   });
 
   it("calculates BM25 document frequency inside the category filter", async () => {

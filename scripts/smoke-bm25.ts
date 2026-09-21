@@ -1,9 +1,10 @@
-// Smoke the in-process BM25 + hybrid retrieval path. A failure is a red line: stop.
+// Smoke the BM25 + hybrid retrieval path. A failure is a red line: stop.
 //
-// BM25 always runs in-process over the knowledge_chunks text (CJK-aware bigram tokenization),
-// in both storage modes (see src/kb/store.ts): legacy SQLite embeddings or Milvus Standalone
-// for the dense path. Hybrid fuses BM25 with dense via reciprocal-rank fusion on this side.
-// The Milvus path itself has a dedicated smoke: scripts/smoke-milvus.ts.
+// The backend follows MILVUS_URI (see src/kb/store.ts): with it set, BM25 and hybrid RRF run
+// inside Milvus Standalone (that path has its own dedicated smoke: scripts/smoke-milvus.ts);
+// with it empty, BM25 is computed in-process over the knowledge_chunks text (CJK-aware
+// bigram tokenization) and hybrid fuses BM25 with dense via reciprocal-rank fusion on this
+// side. Either way this smoke proves the store answers BM25/hybrid queries end to end.
 // Run: node scripts/smoke-bm25.ts (requires a built + vectorized KB)
 import { closeDb } from "#/db/client.ts";
 import { bm25Search, count, hybridSearch, tokenize } from "#/kb/store.ts";

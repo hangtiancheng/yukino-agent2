@@ -1,14 +1,12 @@
-// Knowledge vector store: dense retrieval over Milvus Standalone, BM25 in-process.
+// Knowledge vector store over Milvus Standalone, behaviour-aligned with the Python original
+// (~/Downloads/python app/kb/milvus_client.py): with MILVUS_URI set, dense ANN, native BM25
+// full-text search (BM25 Function over the analyzer-enabled `text` field) and hybrid search
+// (RRF fusion) all run inside Milvus, and Milvus is the authoritative vector store.
 //
-// The Python original (~/Downloads/python app/kb/milvus_client.py) ran Milvus Standalone and
-// pushed dense + sparse(BM25 Function) + hybrid(RRFRanker) all inside Milvus. This port keeps
-// the same four strategies (vector / bm25 / hybrid / hybrid_rerank) but splits the backends:
-//   - dense ANN goes to Milvus Standalone through the official Node SDK (src/kb/milvus.ts)
-//     when MILVUS_URI is set, and Milvus is then the authoritative vector store;
-//   - BM25 is always computed in-process over the knowledge_chunks text (CJK-aware bigrams);
-//   - hybrid fuses the two with the existing reciprocal-rank-fusion code below.
-// With MILVUS_URI empty, dense falls back to the legacy in-process cosine over SQLite
-// embeddings, so the server still runs without Milvus.
+// With MILVUS_URI empty the server still runs without Milvus: dense falls back to in-process
+// cosine over SQLite embeddings, BM25 is computed in-process over the knowledge_chunks text
+// (CJK-aware bigrams), and hybrid fuses the two with the reciprocal-rank-fusion code below.
+// All four strategies (vector / bm25 / hybrid / hybrid_rerank) keep the same interface.
 import * as milvus from "./milvus.ts";
 
 import { settings } from "#/config.ts";
@@ -163,6 +161,11 @@ export async function bm25Search(
   topK: number,
   category: string | null = null,
 ): Promise<KnowledgeHit[]> {
+  // Milvus mode: native full-text search inside Milvus, same as the Python original. The
+  // in-process scorer below only serves legacy mode (MILVUS_URI empty).
+  if (milvus.milvusEnabled()) {
+    return milvus.bm25Search(text, topK, category);
+  }
   const { docs } = await loadChunks();
   const pool = docs.filter((doc) => !category || doc.category === category);
   const queryTerms = [...new Set(tokenize(text))];
@@ -207,7 +210,11 @@ export async function hybridSearch(
   recall = 50,
   category: string | null = null,
 ): Promise<KnowledgeHit[]> {
-  // Reciprocal Rank Fusion over dense and BM25 recall lists.
+  // Milvus mode: dense + BM25 fused with RRF inside Milvus, same as the Python original.
+  if (milvus.milvusEnabled()) {
+    return milvus.hybridSearch(vector, text, topK, recall, category);
+  }
+  // Legacy mode: reciprocal-rank fusion over the in-process recall lists.
   const [dense, sparse] = await Promise.all([
     denseSearch(vector, recall, category),
     bm25Search(text, recall, category),

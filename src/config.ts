@@ -67,6 +67,10 @@ export const settings = {
   ),
   rerankApiKey: str("RERANK_API_KEY"),
   rerankModel: str("RERANK_MODEL", "qwen3.7-text-rerank"),
+  // Wire protocol of the rerank upstream: "jina" = Jina/Cohere-shaped POST {base}/rerank
+  // (what the Python original used against SiliconFlow); "dashscope" = the Aliyun
+  // DashScope-native text-rerank service path under {gateway}/api.
+  rerankProtocol: str("RERANK_PROTOCOL", "jina"),
 
   tokenBudget: num("TOKEN_BUDGET", 2000),
 
@@ -80,10 +84,11 @@ export const settings = {
   subquerySplit: bool("SUBQUERY_SPLIT", true),
   rerankMinScore: num("RERANK_MIN_SCORE", 0.3),
 
-  // --- milvus standalone dense store (optional) ---
-  // Empty = disabled: dense retrieval runs in-process over SQLite embeddings (legacy).
+  // --- milvus standalone vector store (optional) ---
+  // Empty = disabled: retrieval runs in-process over SQLite embeddings + BM25 text (legacy).
   // Set to the Milvus Standalone address (e.g. http://127.0.0.1:19530) to make Milvus the
-  // authoritative dense store; BM25 always stays in-process. See src/kb/milvus.ts.
+  // authoritative vector store: dense ANN, native BM25 full-text search and hybrid RRF all
+  // run inside Milvus, same as the Python original. See src/kb/milvus.ts.
   milvusUri: str("MILVUS_URI"),
   // Optional auth token ("username:password" or an API key) for a secured Milvus;
   // Standalone ships with authorization disabled, so this stays empty by default.
