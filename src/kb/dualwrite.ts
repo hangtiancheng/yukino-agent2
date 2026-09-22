@@ -1,6 +1,6 @@
 // Dual write: relational rows first (pending), then vectors, then mark done.
 //
-// Legacy mode (MILVUS_URI empty) stores the embedding on the SQLite row. Milvus mode
+// Legacy mode (MILVUS_URI empty) stores the embedding on the relational row. Milvus mode
 // upserts the dense vector plus the BM25 source text into Milvus Standalone through the
 // Node SDK (the server derives the sparse vector from the text) and records only the
 // vector id + status on the row (the embedding column stays null). See src/kb/milvus.ts.

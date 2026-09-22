@@ -148,7 +148,9 @@ async function main(): Promise<void> {
       JSON.stringify(bm25.map((h) => [h.id, Number(h.score.toFixed(3))])),
     );
     if (bm25.length === 0) {
-      throw new Error("BM25 search returned no hits (native full-text path broken)");
+      throw new Error(
+        "BM25 search returned no hits (native full-text path broken)",
+      );
     }
     if (bm25[0].id !== 4) {
       throw new Error(`expected BM25 to rank id 4 first, got ${bm25[0].id}`);

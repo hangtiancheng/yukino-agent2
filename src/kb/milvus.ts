@@ -45,7 +45,7 @@ const RRF_K = 60;
 // `dense` is supplied by the caller, while `sparse` is derived server-side by the BM25
 // Function from `text` (category + questions + answer — the same string that gets embedded),
 // so upserts never set it. The scalars are carried so searches return full hits without a
-// SQLite join.
+// relational join.
 export interface MilvusRow {
   id: number;
   dense: number[];
@@ -162,8 +162,9 @@ async function hasCollection(): Promise<boolean> {
 
 // Collections created before the BM25 alignment only had the dense path; a sparse search
 // against them fails with a confusing server-side error. Detect that shape once per process
-// and demand an explicit rebuild instead — the rows are re-derivable from SQLite, and the
-// Python original also rebuilt its collection when the schema changed (Lite -> Standalone).
+// and demand an explicit rebuild instead — the rows are re-derivable from the relational
+// tables, and the Python original also rebuilt its collection when the schema changed
+// (Lite -> Standalone).
 async function assertBm25Schema(): Promise<void> {
   if (schemaChecked) {
     return;
@@ -199,7 +200,7 @@ async function loadCollection(): Promise<void> {
 
 // Idempotent create with a model-agnostic dimension inferred from the first upserted
 // embedding (the embedding model is configurable upstream). Strong consistency keeps the
-// dual-write check (SQLite done-count === Milvus count) and post-vectorize reads
+// dual-write check (PG done-count === Milvus count) and post-vectorize reads
 // deterministic, matching the always-consistent Milvus Lite behaviour this replaces.
 //
 // The old Python bridge serialized every operation through one thread; direct SDK calls

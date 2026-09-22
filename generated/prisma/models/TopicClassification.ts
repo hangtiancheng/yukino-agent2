@@ -402,6 +402,7 @@ export type TopicClassificationCreateOrConnectWithoutQuestionInput = {
 
 export type TopicClassificationCreateManyQuestionInputEnvelope = {
   data: Prisma.TopicClassificationCreateManyQuestionInput | Prisma.TopicClassificationCreateManyQuestionInput[]
+  skipDuplicates?: boolean
 }
 
 export type TopicClassificationUpsertWithWhereUniqueWithoutQuestionInput = {
@@ -1169,6 +1170,7 @@ export type TopicClassificationCreateManyArgs<ExtArgs extends runtime.Types.Exte
    * The data used to create many TopicClassifications.
    */
   data: Prisma.TopicClassificationCreateManyInput | Prisma.TopicClassificationCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1187,6 +1189,7 @@ export type TopicClassificationCreateManyAndReturnArgs<ExtArgs extends runtime.T
    * The data used to create many TopicClassifications.
    */
   data: Prisma.TopicClassificationCreateManyInput | Prisma.TopicClassificationCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

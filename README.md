@@ -7,8 +7,8 @@ kept close.
 
 ## Stack
 
-Hono + zod (HTTP), LangChain / LangGraph + SQLite checkpointer (agent graph), Prisma +
-better-sqlite3 (data), pino (logging), official MCP SDK (tool servers/clients), Langfuse
+Hono + zod (HTTP), LangChain / LangGraph + Postgres checkpointer (agent graph), Prisma +
+PostgreSQL (data), pino (logging), official MCP SDK (tool servers/clients), Langfuse
 over OTel (optional tracing), Vitest + ESLint (tests/lint).
 
 ## Upstreams
@@ -20,14 +20,15 @@ Jina/Cohere shaped). Intent and summary slots fall back to the chat group unless
 
 ## Storage
 
-The Python project used MySQL + Milvus Standalone. This server uses SQLite for relational data:
+The Python project used MySQL + Milvus Standalone. This server uses PostgreSQL for relational data:
 
-- relational tables live in `data/yukino-agent2.db` (Prisma schema in `prisma/schema.prisma`); run `pnpm db:migrate` before the first start;
+- relational tables live in the database pointed to by `DATABASE_URL` (Prisma schema in `prisma/schema.prisma`); run `pnpm db:migrate` before the first start;
 - without `MILVUS_URI` (legacy mode), dense embeddings are stored on `knowledge_chunks` and
   scored in-process, and BM25 is computed in-process with CJK bigram tokenization, so the
   four retrieval strategies (`vector` / `bm25` / `hybrid` / `hybrid_rerank`) keep working
   without a vector database;
-- the LangGraph checkpointer uses `CHECKPOINTER_DB_PATH`.
+- the LangGraph checkpointer uses `CHECKPOINTER_DB_URL` (PostgreSQL; the database is created
+  automatically on first start and the saver creates its own tables inside it).
 
 ### Optional: Milvus Standalone vector store
 
@@ -52,7 +53,7 @@ node scripts/smoke-milvus.ts                      # end-to-end smoke (throwaway 
 node main.js milvus-down                          # stop Milvus Standalone
 ```
 
-With `MILVUS_URI` set, Milvus is the authoritative vector store (the SQLite `embedding`
+With `MILVUS_URI` set, Milvus is the authoritative vector store (the relational `embedding`
 column stays null; `vector_id` + status are still recorded) and a down Milvus surfaces as an
 error instead of silently degrading. Behaviour matches the Python original: dense ANN,
 native BM25 full-text search (a BM25 Function derives the `sparse` field from the

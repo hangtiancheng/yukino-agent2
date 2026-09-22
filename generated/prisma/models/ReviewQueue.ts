@@ -1269,6 +1269,7 @@ export type ReviewQueueCreateManyArgs<ExtArgs extends runtime.Types.Extensions.I
    * The data used to create many ReviewQueues.
    */
   data: Prisma.ReviewQueueCreateManyInput | Prisma.ReviewQueueCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1287,6 +1288,7 @@ export type ReviewQueueCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Ext
    * The data used to create many ReviewQueues.
    */
   data: Prisma.ReviewQueueCreateManyInput | Prisma.ReviewQueueCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**

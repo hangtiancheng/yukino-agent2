@@ -213,12 +213,9 @@ dist-rollup/
 dist-tsup/
 **/dist-tsup/
 
-data/yukino-agent2.db
 data/train/
 data/milvus/
 milvus-lite.db
 
 .react-router
 **/.react-router
-
-data/checkpoints*

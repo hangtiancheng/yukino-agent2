@@ -75,8 +75,13 @@ export const settings = {
   tokenBudget: num("TOKEN_BUDGET", 2000),
 
   // --- database / checkpointer ---
-  databaseUrl: str("DATABASE_URL", "file:./data/yukino-agent2.db"),
-  checkpointerDbPath: str("CHECKPOINTER_DB_PATH", "data/checkpoints.sqlite"),
+  databaseUrl: str("DATABASE_URL", "postgresql://127.0.0.1:5432/yukino_agent2"),
+  // LangGraph checkpointer database (PostgreSQL). Created automatically on first start;
+  // the saver creates its own tables/migrations inside it.
+  checkpointerDbUrl: str(
+    "CHECKPOINTER_DB_URL",
+    "postgresql://127.0.0.1:5432/yukino_agent2_checkpoints",
+  ),
 
   // --- retrieval ---
   recallTopK: num("RECALL_TOP_K", 50),
@@ -85,7 +90,7 @@ export const settings = {
   rerankMinScore: num("RERANK_MIN_SCORE", 0.3),
 
   // --- milvus standalone vector store (optional) ---
-  // Empty = disabled: retrieval runs in-process over SQLite embeddings + BM25 text (legacy).
+  // Empty = disabled: retrieval runs in-process over PG embeddings + BM25 text (legacy).
   // Set to the Milvus Standalone address (e.g. http://127.0.0.1:19530) to make Milvus the
   // authoritative vector store: dense ANN, native BM25 full-text search and hybrid RRF all
   // run inside Milvus, same as the Python original. See src/kb/milvus.ts.

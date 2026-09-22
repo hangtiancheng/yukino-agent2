@@ -1085,6 +1085,7 @@ export type QaExtractionStagingCreateManyArgs<ExtArgs extends runtime.Types.Exte
    * The data used to create many QaExtractionStagings.
    */
   data: Prisma.QaExtractionStagingCreateManyInput | Prisma.QaExtractionStagingCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1103,6 +1104,7 @@ export type QaExtractionStagingCreateManyAndReturnArgs<ExtArgs extends runtime.T
    * The data used to create many QaExtractionStagings.
    */
   data: Prisma.QaExtractionStagingCreateManyInput | Prisma.QaExtractionStagingCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**

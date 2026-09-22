@@ -4,7 +4,7 @@
 // (RRF fusion) all run inside Milvus, and Milvus is the authoritative vector store.
 //
 // With MILVUS_URI empty the server still runs without Milvus: dense falls back to in-process
-// cosine over SQLite embeddings, BM25 is computed in-process over the knowledge_chunks text
+// cosine over relational embeddings, BM25 is computed in-process over the knowledge_chunks text
 // (CJK-aware bigrams), and hybrid fuses the two with the reciprocal-rank-fusion code below.
 // All four strategies (vector / bm25 / hybrid / hybrid_rerank) keep the same interface.
 import * as milvus from "./milvus.ts";
@@ -237,7 +237,7 @@ export async function hybridSearch(
 
 export async function count(): Promise<number> {
   // In Milvus mode this is the authoritative vector count (used by the kb overview
-  // dual-write consistency check: SQLite done-count === Milvus vector-count).
+  // dual-write consistency check: PG done-count === Milvus vector-count).
   if (milvus.milvusEnabled()) {
     return milvus.count();
   }

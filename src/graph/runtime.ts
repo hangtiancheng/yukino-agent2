@@ -1,7 +1,4 @@
 // Graph runtime: checkpointer lifecycle, turn input/resume, streaming events and settlement.
-import fs from "node:fs";
-import path from "node:path";
-
 import {
   AIMessage,
   BaseMessage,
@@ -9,7 +6,8 @@ import {
   ToolMessage,
 } from "@langchain/core/messages";
 import { Command, INTERRUPT, isInterrupted } from "@langchain/langgraph";
-import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
+import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
+import { Client } from "pg";
 import { z } from "zod";
 
 import { buildGraph } from "./build.ts";
@@ -36,7 +34,7 @@ const CITATION_NODES = new Set(["retrieve_knowledge", "retrieve_policy"]);
 type Graph = ReturnType<typeof buildGraph>;
 interface RuntimeState {
   graph: Graph;
-  checkpointer: SqliteSaver;
+  checkpointer: PostgresSaver;
 }
 
 let runtimeState: RuntimeState | null = null;
@@ -48,19 +46,55 @@ export class ConversationNotFound extends Error {
   }
 }
 
-export function initGraph(): void {
-  closeGraph();
-  const dbPath = path.resolve(settings.root, settings.checkpointerDbPath);
-  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-  const checkpointer = SqliteSaver.fromConnString(dbPath);
-  runtimeState = { graph: buildGraph(checkpointer), checkpointer };
-  log.info({ checkpointer: dbPath }, "graph compiled");
+function isDuplicateDatabaseError(error: unknown): boolean {
+  // 42P04 = duplicate_database: another process won the create race.
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "42P04"
+  );
 }
 
-export function closeGraph(): void {
+// The saver only creates tables/migrations inside an existing database, so create the
+// checkpointer database itself first (mirroring the old ensureSqliteDir behaviour).
+async function ensureCheckpointerDatabase(url: string): Promise<string> {
+  const target = new URL(url);
+  const dbName = decodeURIComponent(target.pathname.slice(1));
+  if (!/^[A-Za-z0-9_]+$/.test(dbName)) {
+    throw new Error(
+      `CHECKPOINTER_DB_URL must name a simple database (got "${dbName}")`,
+    );
+  }
+  const maintenance = new URL(target);
+  maintenance.pathname = "/postgres";
+  const client = new Client({ connectionString: maintenance.toString() });
+  await client.connect();
+  try {
+    await client.query(`CREATE DATABASE "${dbName}"`);
+  } catch (error) {
+    if (!isDuplicateDatabaseError(error)) {
+      throw error;
+    }
+  } finally {
+    await client.end();
+  }
+  return dbName;
+}
+
+export async function initGraph(): Promise<void> {
+  await closeGraph();
+  const dbName = await ensureCheckpointerDatabase(settings.checkpointerDbUrl);
+  const checkpointer = PostgresSaver.fromConnString(settings.checkpointerDbUrl);
+  await checkpointer.setup();
+  runtimeState = { graph: buildGraph(checkpointer), checkpointer };
+  log.info({ checkpointer: dbName }, "graph compiled");
+}
+
+export async function closeGraph(): Promise<void> {
   const current = runtimeState;
   runtimeState = null;
-  current?.checkpointer.db.close();
+  await current?.checkpointer.end();
 }
 
 function getGraph(): Graph {

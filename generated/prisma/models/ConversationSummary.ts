@@ -1115,6 +1115,7 @@ export type ConversationSummaryCreateManyArgs<ExtArgs extends runtime.Types.Exte
    * The data used to create many ConversationSummaries.
    */
   data: Prisma.ConversationSummaryCreateManyInput | Prisma.ConversationSummaryCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1133,6 +1134,7 @@ export type ConversationSummaryCreateManyAndReturnArgs<ExtArgs extends runtime.T
    * The data used to create many ConversationSummaries.
    */
   data: Prisma.ConversationSummaryCreateManyInput | Prisma.ConversationSummaryCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**

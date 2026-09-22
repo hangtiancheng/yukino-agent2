@@ -576,6 +576,7 @@ export type LowConfidenceQuestionCreateOrConnectWithoutConversationInput = {
 
 export type LowConfidenceQuestionCreateManyConversationInputEnvelope = {
   data: Prisma.LowConfidenceQuestionCreateManyConversationInput | Prisma.LowConfidenceQuestionCreateManyConversationInput[]
+  skipDuplicates?: boolean
 }
 
 export type LowConfidenceQuestionUpsertWithWhereUniqueWithoutConversationInput = {
@@ -636,6 +637,7 @@ export type LowConfidenceQuestionCreateOrConnectWithoutMatchedReviewInput = {
 
 export type LowConfidenceQuestionCreateManyMatchedReviewInputEnvelope = {
   data: Prisma.LowConfidenceQuestionCreateManyMatchedReviewInput | Prisma.LowConfidenceQuestionCreateManyMatchedReviewInput[]
+  skipDuplicates?: boolean
 }
 
 export type LowConfidenceQuestionUpsertWithWhereUniqueWithoutMatchedReviewInput = {
@@ -1577,6 +1579,7 @@ export type LowConfidenceQuestionCreateManyArgs<ExtArgs extends runtime.Types.Ex
    * The data used to create many LowConfidenceQuestions.
    */
   data: Prisma.LowConfidenceQuestionCreateManyInput | Prisma.LowConfidenceQuestionCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1595,6 +1598,7 @@ export type LowConfidenceQuestionCreateManyAndReturnArgs<ExtArgs extends runtime
    * The data used to create many LowConfidenceQuestions.
    */
   data: Prisma.LowConfidenceQuestionCreateManyInput | Prisma.LowConfidenceQuestionCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

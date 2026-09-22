@@ -1,6 +1,6 @@
 import { defineConfig } from "prisma/config";
 
-// Load .env when present so CLI commands (db push / generate) use the same database path
+// Load .env when present so CLI commands (migrate / generate) use the same database URL
 // as the runtime configuration.
 try {
   process.loadEnvFile(".env");
@@ -12,6 +12,7 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: { path: "prisma/migrations" },
   datasource: {
-    url: process.env.DATABASE_URL ?? "file:./data/yukino-agent2.db",
+    url:
+      process.env.DATABASE_URL ?? "postgresql://127.0.0.1:5432/yukino_agent2",
   },
 });

@@ -1319,6 +1319,7 @@ export type FaithCaseCreateManyArgs<ExtArgs extends runtime.Types.Extensions.Int
    * The data used to create many FaithCases.
    */
   data: Prisma.FaithCaseCreateManyInput | Prisma.FaithCaseCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1337,6 +1338,7 @@ export type FaithCaseCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Exten
    * The data used to create many FaithCases.
    */
   data: Prisma.FaithCaseCreateManyInput | Prisma.FaithCaseCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**

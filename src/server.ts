@@ -115,7 +115,7 @@ export async function startServer(): Promise<void> {
   initObservability();
   checkContextBudget();
   await warmupMilvus();
-  runtime.initGraph();
+  await runtime.initGraph();
   const app = createApp();
   const server = serve({
     fetch: app.fetch,
@@ -128,7 +128,7 @@ export async function startServer(): Promise<void> {
     server.close(() => {
       void (async () => {
         try {
-          runtime.closeGraph();
+          await runtime.closeGraph();
           await shutdownObservability();
           await closeDb();
         } catch (error) {

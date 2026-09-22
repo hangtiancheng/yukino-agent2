@@ -1327,6 +1327,7 @@ export type KnowledgeChunkCreateManyArgs<ExtArgs extends runtime.Types.Extension
    * The data used to create many KnowledgeChunks.
    */
   data: Prisma.KnowledgeChunkCreateManyInput | Prisma.KnowledgeChunkCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1345,6 +1346,7 @@ export type KnowledgeChunkCreateManyAndReturnArgs<ExtArgs extends runtime.Types.
    * The data used to create many KnowledgeChunks.
    */
   data: Prisma.KnowledgeChunkCreateManyInput | Prisma.KnowledgeChunkCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**

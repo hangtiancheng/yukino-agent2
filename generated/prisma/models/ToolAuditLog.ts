@@ -1271,6 +1271,7 @@ export type ToolAuditLogCreateManyArgs<ExtArgs extends runtime.Types.Extensions.
    * The data used to create many ToolAuditLogs.
    */
   data: Prisma.ToolAuditLogCreateManyInput | Prisma.ToolAuditLogCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1289,6 +1290,7 @@ export type ToolAuditLogCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Ex
    * The data used to create many ToolAuditLogs.
    */
   data: Prisma.ToolAuditLogCreateManyInput | Prisma.ToolAuditLogCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**

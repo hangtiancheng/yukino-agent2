@@ -1,8 +1,7 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
 
+import { Client } from "pg";
 import {
   afterAll,
   beforeAll,
@@ -18,28 +17,43 @@ import type * as RepositoryExports from "#/db/repository.ts";
 
 let db: typeof DbExports;
 let repository: typeof RepositoryExports;
-let tempDir: string;
+let admin: Client;
+let dbName: string;
+
+// Maintenance connection base; override with TEST_DATABASE_URL when the local server
+// needs credentials or a non-default port.
+const baseUrl = new URL(
+  process.env.TEST_DATABASE_URL ?? "postgresql://127.0.0.1:5432/postgres",
+);
 
 beforeAll(async () => {
-  tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "yukino-agent2-test-"));
-  const dbPath = path.join(tempDir, "test.db");
+  dbName = `yukino_agent2_test_${Date.now()}_${process.pid}`;
+  admin = new Client({ connectionString: baseUrl.toString() });
+  await admin.connect();
+  await admin.query(`CREATE DATABASE ${dbName}`);
+
   const migrationsDir = path.join(process.cwd(), "prisma/migrations");
   const migrations = fs
     .readdirSync(migrationsDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .sort((left, right) => left.name.localeCompare(right.name));
-  const sqlite = new DatabaseSync(dbPath);
-  for (const migration of migrations) {
-    sqlite.exec(
-      fs.readFileSync(
-        path.join(migrationsDir, migration.name, "migration.sql"),
-        "utf8",
-      ),
-    );
+  const targetUrl = new URL(`/${dbName}`, baseUrl).toString();
+  const target = new Client({ connectionString: targetUrl });
+  await target.connect();
+  try {
+    for (const migration of migrations) {
+      await target.query(
+        fs.readFileSync(
+          path.join(migrationsDir, migration.name, "migration.sql"),
+          "utf8",
+        ),
+      );
+    }
+  } finally {
+    await target.end();
   }
-  sqlite.close();
 
-  process.env.DATABASE_URL = `file:${dbPath}`;
+  process.env.DATABASE_URL = targetUrl;
   vi.resetModules();
   db = await import("#/db/client.ts");
   repository = await import("#/db/repository.ts");
@@ -62,7 +76,8 @@ beforeEach(async () => {
 afterAll(async () => {
   await db.closeDb();
   delete process.env.DATABASE_URL;
-  fs.rmSync(tempDir, { recursive: true, force: true });
+  await admin.query(`DROP DATABASE IF EXISTS ${dbName} WITH (FORCE)`);
+  await admin.end();
 });
 
 describe("repository integrity", () => {

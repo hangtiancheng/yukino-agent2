@@ -20,7 +20,12 @@ function rerankUrl(): string {
   if (isDashscope()) {
     // DashScope-native service path. Strip compat-mode/version suffixes so a base shared
     // with the chat/embed slots (…/compatible-mode/v1) still resolves to the gateway root.
-    for (const suffix of ["/v1", "/v2", "/compatible-mode", "/compatible-api"]) {
+    for (const suffix of [
+      "/v1",
+      "/v2",
+      "/compatible-mode",
+      "/compatible-api",
+    ]) {
       if (base.endsWith(suffix)) {
         base = base.slice(0, -suffix.length);
       }

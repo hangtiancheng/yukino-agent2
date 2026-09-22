@@ -37,7 +37,7 @@ Milvus. This stack's Milvus behaviour is aligned with that original:
   (`src/kb/milvus.ts`, `@zilliz/milvus2-sdk-node`) -> Milvus Standalone (gRPC
   `127.0.0.1:19530`). No bridge process: the old Python gRPC bridge + Milvus Lite
   (`src/milvus/`) was replaced by the direct SDK connection.
-- Opt-in via `MILVUS_URI` (empty = legacy in-process cosine + BM25 over SQLite;
+- Opt-in via `MILVUS_URI` (empty = legacy in-process cosine + BM25 over the relational DB;
   `MILVUS_TOKEN` for a secured instance). When set, Milvus is the authoritative vector
   store: dense ANN, native BM25 full-text search (BM25 Function over the analyzer-enabled
   `text` field) and hybrid RRF fusion all run inside Milvus, same as the Python original.

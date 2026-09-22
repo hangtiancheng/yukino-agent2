@@ -69,7 +69,11 @@ describe("knowledge store", () => {
 
     const hits = await bm25Search("shipping", 5, "shipping");
 
-    expect(mocks.milvusBm25Search).toHaveBeenCalledWith("shipping", 5, "shipping");
+    expect(mocks.milvusBm25Search).toHaveBeenCalledWith(
+      "shipping",
+      5,
+      "shipping",
+    );
     expect(hits).toEqual([hit]);
     expect(mocks.listVectorizedChunks).not.toHaveBeenCalled();
   });
