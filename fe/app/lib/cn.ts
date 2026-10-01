@@ -1,0 +1,4 @@
+/** className joiner: filters falsy values; a lightweight clsx alternative */
+export function cn(...parts: (string | false | null | undefined)[]): string {
+  return parts.filter(Boolean).join(" ");
+}
