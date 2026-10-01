@@ -10,7 +10,7 @@ import { setPageTitle } from "~/lib/router";
 export class NotFoundPage extends LightElement {
   override connectedCallback(): void {
     super.connectedCallback();
-    setPageTitle("MeowMeow Select · Not Found");
+    setPageTitle("Yukino Select · Not Found");
   }
 
   protected override render() {

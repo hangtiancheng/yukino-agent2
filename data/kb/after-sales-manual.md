@@ -23,7 +23,7 @@ Electronic items carry a 12-month warranty, counted from the date of receipt; us
 
 ## Device Installation & Activation
 
-For first use of smart devices, download the "MeowMeow Select" app, scan the QR code per the manual to add the device, and connect to 2.4G Wi-Fi to complete activation. Non-connected items such as cat trees are self-assembled following the included illustrated instructions.
+For first use of smart devices, download the "Yukino Select" app, scan the QR code per the manual to add the device, and connect to 2.4G Wi-Fi to complete activation. Non-connected items such as cat trees are self-assembled following the included illustrated instructions.
 
 ## Common Fault Self-Checks
 
@@ -34,7 +34,7 @@ For first use of smart devices, download the "MeowMeow Select" app, scan the QR 
 
 ## Human Customer Service Access & Hours
 
-When human assistance is needed for after-sales issues such as refunds, returns, exchanges, repairs, damage, or short/missing items, you can be transferred to online human customer service in the "MeowMeow Select" app via "Me" → "Contact Customer Service", or via the "Order After-Sales / Contact Customer Service" entry on the order detail page, and submit evidence such as the order number, unboxing video, or product photos as guided on the page. Human customer service hours are 9:00 to 22:00 daily; during peak hours, please wait patiently or leave a message.
+When human assistance is needed for after-sales issues such as refunds, returns, exchanges, repairs, damage, or short/missing items, you can be transferred to online human customer service in the "Yukino Select" app via "Me" → "Contact Customer Service", or via the "Order After-Sales / Contact Customer Service" entry on the order detail page, and submit evidence such as the order number, unboxing video, or product photos as guided on the page. Human customer service hours are 9:00 to 22:00 daily; during peak hours, please wait patiently or leave a message.
 
 ## Mail-In Repair Process
 

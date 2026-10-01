@@ -99,7 +99,7 @@ function ModuleCard({ m, i }: { m: AdminModule; i: number }) {
 
 @customElement("admin-page")
 export class AdminPage extends DataLoaderElement<Overview> {
-  protected override pageTitle = "MeowMeow Select · Admin Console";
+  protected override pageTitle = "Yukino Select · Admin Console";
 
   protected override load(): Promise<Overview> {
     return api<Overview>("/api/admin/overview");

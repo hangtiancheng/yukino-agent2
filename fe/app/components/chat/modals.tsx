@@ -81,7 +81,7 @@ export class TicketModal extends ModalShell {
     return "Create ticket";
   }
   protected override dialogSub(): string {
-    return "Meow will log the issue as a ticket and follow up on it";
+    return "Yukino will log the issue as a ticket and follow up on it";
   }
 
   protected override dialogBody() {
@@ -193,7 +193,7 @@ export class RefundModal extends ModalShell {
     return "Submit refund ticket";
   }
   protected override dialogSub(): string {
-    return "Review the order and refund reason, then submit — Meow will register the refund request for you";
+    return "Review the order and refund reason, then submit — Yukino will register the refund request for you";
   }
 
   protected override dialogBody() {

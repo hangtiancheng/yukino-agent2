@@ -1,11 +1,9 @@
 @eslint.config.js
 
 - MUST Ignore ALL eslint warnings
-- NEVER add MIT license header manually
-- Yukino Agent2 is a pure English project
 - @package.json
-- Project Brand Name: MeowMeow Select
-- Project Agent Persona: Meow
+- Project Brand Name: Yukino Select
+- Project Agent Persona: Yukino
 
 ## Milvus migration (Python Milvus => Node -> Milvus Standalone)
 

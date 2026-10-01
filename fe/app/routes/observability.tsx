@@ -152,7 +152,7 @@ function NoteBox({ title, children }: { title: string; children: unknown }) {
 
 @customElement("observability-page")
 export class ObservabilityPage extends DataLoaderElement<Overview> {
-  protected override pageTitle = "MeowMeow Select · Observability";
+  protected override pageTitle = "Yukino Select · Observability";
 
   protected override load(): Promise<Overview> {
     return api<Overview>("/api/observability/overview");

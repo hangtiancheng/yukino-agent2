@@ -1,6 +1,6 @@
 # Product Specifications Manual
 
-This manual covers the models, specifications, and usage notes for MeowMeow Select's self-operated smart hardware, for easy lookup by specific model.
+This manual covers the models, specifications, and usage notes for Yukino Select's self-operated smart hardware, for easy lookup by specific model.
 
 ## Smart Litter Box Pro (Model MH-LP100)
 

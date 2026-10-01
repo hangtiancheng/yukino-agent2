@@ -85,7 +85,7 @@ export class ChatPage extends LightElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    setPageTitle("MeowMeow Select · AI Assistant");
+    setPageTitle("Yukino Select · AI Assistant");
     // Chat page renders client-side only (SPA); restore the current conversation id
     const v = localStorage.getItem(CONV_KEY);
     this.conversationId = v ? Number(v) : null;
@@ -270,7 +270,7 @@ export class ChatPage extends LightElement {
   }
 
   /** Client-side simulation of transferring to a human agent: shows a transferred
-      notice + a greeting from Meow (no real agent system) */
+      notice + a greeting from Yukino (no real agent system) */
   private transferHuman(): void {
     const sys: BotMsg = {
       id: this.nextId++,
@@ -285,7 +285,7 @@ export class ChatPage extends LightElement {
     const greet: BotMsg = {
       id: this.nextId++,
       role: "bot",
-      raw: "Hi, I'm Meow from customer support. How can I help you?",
+      raw: "Hi, I'm Yukino from customer support. How can I help you?",
       tools: [],
       citations: [],
       actions: [],
@@ -433,7 +433,7 @@ export class ChatPage extends LightElement {
           }}
           class="text-headline-small text-on-surface font-medium"
         >
-          Hi, I'm Meow
+          Hi, I'm Yukino
         </h1>
         <p
           ref={(el: Element | undefined) => {
@@ -441,7 +441,7 @@ export class ChatPage extends LightElement {
           }}
           class="text-body-medium text-on-surface-variant mt-2 max-w-sm leading-6"
         >
-          MeowMeow Select's AI Assistant — ask me about products, orders, and
+          Yukino Select's AI Assistant — ask me about products, orders, and
           after-sales support.
         </p>
         <div class="mt-6 flex max-w-110 flex-wrap justify-center gap-2">
@@ -503,11 +503,11 @@ export class ChatPage extends LightElement {
             </div>
             <div class="flex min-w-0 flex-col leading-tight">
               <span class="text-title-medium text-on-surface truncate">
-                Meow · AI Assistant
+                Yukino · AI Assistant
               </span>
               <span class="text-label-small text-on-surface-variant flex items-center gap-1.5">
                 <span class="bg-success h-2 w-2 rounded-full" />
-                Online · MeowMeow Select
+                Online · Yukino Select
               </span>
             </div>
             <div class="flex-1" />
@@ -566,7 +566,7 @@ export class ChatPage extends LightElement {
                 </button>
               </div>
               <p class="text-on-surface-variant text-label-small mt-2.5 text-center">
-                Meow is an AI assistant. For questions about specific orders,
+                Yukino is an AI assistant. For questions about specific orders,
                 we'll transfer you to a human agent to verify.
               </p>
             </div>

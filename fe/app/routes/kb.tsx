@@ -174,7 +174,7 @@ export class KbPage extends DataLoaderElement<KbOverview> {
   private textRef = createRef<HTMLTextAreaElement>();
   private qRef = createRef<HTMLInputElement>();
 
-  protected override pageTitle = "MeowMeow Select · Knowledge Base Entry";
+  protected override pageTitle = "Yukino Select · Knowledge Base Entry";
 
   protected override load(): Promise<KbOverview> {
     return api<KbOverview>("/api/kb/overview");

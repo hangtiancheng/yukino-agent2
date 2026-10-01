@@ -6,7 +6,7 @@ import { summarizeDialog } from "#/core/summarizer.ts";
 
 // Case 1: fact retention — order id / phone number / the ask must make it into the summary
 const CASE1_DIALOG = `User: Hi, are you there
-Agent: Hello, this is Meow. How can I help you?
+Agent: Hello, this is Yukino. How can I help you?
 User: The cat tree I bought, order 1001, still has not arrived. When will it ship?
 Agent: Order 1001 has left the Hangzhou warehouse and is expected to arrive the day after tomorrow.
 User: That is too slow. My phone is 13800138000; have the courier call ahead when it arrives.
@@ -14,7 +14,7 @@ Agent: Noted; the courier will call 13800138000 before delivery.
 User: By the way, how much weight can this cat tree hold?
 Agent: This cat tree supports up to 15 kg.`;
 const CASE1_MUST = ["1001", "13800138000", "cat tree"];
-const CASE1_BAN = ["are you there", "Hello, this is Meow"]; // greetings must not survive
+const CASE1_BAN = ["are you there", "Hello, this is Yukino"]; // greetings must not survive
 
 // Case 2: no fabrication — every numeric entity in the summary must appear in the source
 const CASE2_DIALOG = `User: Can order 2002 be returned?

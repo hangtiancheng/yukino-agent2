@@ -17,7 +17,7 @@ export abstract class DataLoaderElement<T> extends LightElement {
   @state() protected loading = false;
 
   private everLoaded = false;
-  protected pageTitle = "MeowMeow Select";
+  protected pageTitle = "Yukino Select";
 
   override connectedCallback(): void {
     super.connectedCallback();

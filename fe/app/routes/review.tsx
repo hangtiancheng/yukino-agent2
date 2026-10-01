@@ -231,7 +231,7 @@ export class ReviewPage extends DataLoaderElement<Queue> {
   @state() private approving: ReviewItem | null = null;
   @state() private rejecting: number | null = null;
 
-  protected override pageTitle = "MeowMeow Select · Review Queue";
+  protected override pageTitle = "Yukino Select · Review Queue";
   private searchReady = false;
   private detailRef = createRef<HTMLDivElement>();
 

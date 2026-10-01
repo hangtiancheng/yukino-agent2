@@ -1214,7 +1214,7 @@ const NOTES: [string, string][] = [
 
 @customElement("rageval-page")
 export class RagEvalPage extends DataLoaderElement<Overview> {
-  protected override pageTitle = "MeowMeow Select · RAG Eval";
+  protected override pageTitle = "Yukino Select · RAG Eval";
 
   protected override load(): Promise<Overview> {
     return api<Overview>("/api/rag-eval/overview");
