@@ -22,7 +22,7 @@ describe("budget", () => {
   });
 
   it("looks up known model windows by prefix", () => {
-    expect(lookupWindow("deepseek-ai/DeepSeek-V4-Flash")[0]).toBe(1_048_576);
+    expect(lookupWindow("deepseek-ai/deepseek-flash")[0]).toBe(1_048_576);
     expect(lookupWindow("unknown-model")[1]).toBe(false);
   });
 });

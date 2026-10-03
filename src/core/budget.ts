@@ -10,7 +10,7 @@ import { settings } from "#/config.ts";
 const KNOWN_WINDOWS: Record<string, number> = {
   "minimax-m3": 1_000_000,
   "minimax-m2": 204_800,
-  "deepseek-v4-flash": 1_048_576,
+  "deepseek-flash": 1_048_576,
   "deepseek-v4": 1_048_576,
   "deepseek-v3": 131_072,
   "deepseek-chat": 131_072,
@@ -27,7 +27,7 @@ const KNOWN_WINDOWS: Record<string, number> = {
 const FALLBACK_WINDOW = 32_768;
 
 export function lookupWindow(model: string): [number, boolean] {
-  // Upstreams often carry a provider prefix (deepseek-ai/DeepSeek-V4-Flash); use the tail.
+  // Upstreams often carry a provider prefix (deepseek-ai/deepseek-flash); use the tail.
   const name = String(model ?? "")
     .trim()
     .toLowerCase()
