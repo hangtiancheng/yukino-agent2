@@ -1,7 +1,4 @@
 // Rerank upstream client (not OpenAI protocol). Two wire shapes, picked via RERANK_PROTOCOL:
-//   - "jina" (default, what the Python original used): Jina/Cohere-shaped POST {base}/rerank;
-//   - "dashscope": the Aliyun DashScope-native text-rerank service, which some managed
-//     gateways expose instead of a /rerank endpoint (the OpenAI-compatible tree 404s).
 import { z } from "zod";
 
 import { settings } from "#/config.ts";
@@ -11,15 +8,13 @@ const RETRY_STATUS = new Set([429, 500, 502, 503, 504]);
 const RETRIES = 3;
 const BACKOFF_MS = 1500;
 
-function isDashscope(): boolean {
-  return settings.rerankProtocol === "dashscope";
+function isJina(): boolean {
+  return settings.rerankProtocol === "jina";
 }
 
 function rerankUrl(): string {
   let base = settings.rerankBaseUrl.replace(/\/+$/, "");
-  if (isDashscope()) {
-    // DashScope-native service path. Strip compat-mode/version suffixes so a base shared
-    // with the chat/embed slots (…/compatible-mode/v1) still resolves to the gateway root.
+  if (!isJina()) {
     for (const suffix of [
       "/v1",
       "/v2",
@@ -46,7 +41,6 @@ const resultItemSchema = z.object({
   index: z.number(),
   relevance_score: z.number(),
 });
-// DashScope nests the results under `output`; jina/cohere return them top-level.
 const rerankResponseSchema = z.object({
   results: z.array(resultItemSchema).optional(),
   output: z
@@ -108,7 +102,7 @@ export async function rerank(
   if (docs.length === 0) {
     return [];
   }
-  const body = isDashscope()
+  const body = !isJina()
     ? {
         model: settings.rerankModel,
         input: { query, documents: docs },

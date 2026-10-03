@@ -67,9 +67,6 @@ export const settings = {
   ),
   rerankApiKey: str("RERANK_API_KEY"),
   rerankModel: str("RERANK_MODEL", "qwen3.7-text-rerank"),
-  // Wire protocol of the rerank upstream: "jina" = Jina/Cohere-shaped POST {base}/rerank
-  // (what the Python original used against SiliconFlow); "dashscope" = the Aliyun
-  // DashScope-native text-rerank service path under {gateway}/api.
   rerankProtocol: str("RERANK_PROTOCOL", "jina"),
 
   tokenBudget: num("TOKEN_BUDGET", 2000),
