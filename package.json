@@ -19,6 +19,7 @@
     "db:generate": "pnpm -C server db:generate",
     "db:migrate": "pnpm -C server db:migrate",
     "db:push": "pnpm -C server db:push",
+    "git:config": "git config user.name hangtiancheng && git config user.email '161043261@qq.com'",
     "git:commit": "git add -A && git commit -m \"feat: Introduce new features\"",
     "git:commit:skip": "git add -A && git commit -m \"feat: Introduce new features [skip ci]\"",
     "git:push": "pnpm git:commit && git push origin main",
