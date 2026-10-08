@@ -317,11 +317,11 @@
   --ease-accel: cubic-bezier(0.3, 0, 0.8, 0.15);
 
   --font-sans:
-    Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
-    Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    'Yukino', 'Maple Mono', Menlo, 'Cascadia Code', 'Sarasa Gothic SC', 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
   --font-mono:
-    "Roboto Mono", ui-monospace, "SF Mono", "Cascadia Mono", Consolas,
-    "PingFang SC", "Microsoft YaHei", monospace;
+    'Yukino', 'Maple Mono', Menlo, 'Cascadia Code', 'Sarasa Gothic SC', 'PingFang SC',
+    'Microsoft YaHei', monospace;
 }
 
 /* ---------- Base ---------- */
