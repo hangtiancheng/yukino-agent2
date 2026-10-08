@@ -1,0 +1,40 @@
+{
+  "name": "yukino-agent2",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Yukino Select customer-service agent — pnpm workspace (client SPA + server backend)",
+  "author": "https://github.com/hangtiancheng",
+  "license": "ISC",
+  "type": "module",
+  "scripts": {
+    "dev": "node server/main.js dev",
+    "dev:down": "node server/main.js dev-down",
+    "dev:client": "pnpm --filter client dev",
+    "build": "pnpm --filter client build",
+    "start": "pnpm -C server start",
+    "lint": "eslint --cache --fix --quiet ./",
+    "format": "prettier -w ./ --experimental-cli",
+    "typecheck": "pnpm -C server typecheck && pnpm -C client typecheck",
+    "test": "pnpm -C server test",
+    "db:generate": "pnpm -C server db:generate",
+    "db:migrate": "pnpm -C server db:migrate",
+    "db:push": "pnpm -C server db:push",
+    "git:commit": "git add -A && git commit -m \"feat: Introduce new features\"",
+    "git:commit:skip": "git add -A && git commit -m \"feat: Introduce new features [skip ci]\"",
+    "git:push": "pnpm git:commit && git push origin main",
+    "git:push:skip": "pnpm git:commit:skip && git push origin main"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^9.39.5",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "eslint-plugin-unicorn": "^74.0.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.9",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.1"
+  }
+}

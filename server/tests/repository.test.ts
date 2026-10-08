@@ -1,0 +1,195 @@
+import fs from "node:fs";
+import path from "node:path";
+
+import { Client } from "pg";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
+
+import type * as DbExports from "#/db/client.ts";
+import type * as RepositoryExports from "#/db/repository.ts";
+
+let db: typeof DbExports;
+let repository: typeof RepositoryExports;
+let admin: Client;
+let dbName: string;
+
+// Maintenance connection base; override with TEST_DATABASE_URL when the local server
+// needs credentials or a non-default port.
+const baseUrl = new URL(
+  process.env.TEST_DATABASE_URL ?? "postgresql://127.0.0.1:5432/postgres",
+);
+
+beforeAll(async () => {
+  dbName = `yukino_agent2_test_${Date.now()}_${process.pid}`;
+  admin = new Client({ connectionString: baseUrl.toString() });
+  await admin.connect();
+  await admin.query(`CREATE DATABASE ${dbName}`);
+
+  const migrationsDir = path.join(process.cwd(), "prisma/migrations");
+  const migrations = fs
+    .readdirSync(migrationsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .sort((left, right) => left.name.localeCompare(right.name));
+  const targetUrl = new URL(`/${dbName}`, baseUrl).toString();
+  const target = new Client({ connectionString: targetUrl });
+  await target.connect();
+  try {
+    for (const migration of migrations) {
+      await target.query(
+        fs.readFileSync(
+          path.join(migrationsDir, migration.name, "migration.sql"),
+          "utf8",
+        ),
+      );
+    }
+  } finally {
+    await target.end();
+  }
+
+  process.env.DATABASE_URL = targetUrl;
+  vi.resetModules();
+  db = await import("#/db/client.ts");
+  repository = await import("#/db/repository.ts");
+});
+
+beforeEach(async () => {
+  await db.prisma.$transaction([
+    db.prisma.lowConfidenceQuestion.deleteMany(),
+    db.prisma.reviewQueue.deleteMany(),
+    db.prisma.ticket.deleteMany(),
+    db.prisma.message.deleteMany(),
+    db.prisma.conversationSummary.deleteMany(),
+    db.prisma.faithCase.deleteMany(),
+    db.prisma.knowledgeChunk.deleteMany(),
+    db.prisma.conversation.deleteMany(),
+  ]);
+});
+
+afterAll(async () => {
+  await db.closeDb();
+  delete process.env.DATABASE_URL;
+  await admin.query(`DROP DATABASE IF EXISTS ${dbName} WITH (FORCE)`);
+  await admin.end();
+});
+
+describe("repository integrity", () => {
+  it("does not create a ticket for a missing conversation", async () => {
+    await expect(
+      repository.createTicket(999, "missing", "inquiry"),
+    ).rejects.toThrow();
+    await expect(db.prisma.ticket.count()).resolves.toBe(0);
+  });
+
+  it("inserts a chunk batch atomically with neighbor links", async () => {
+    const ids = await repository.insertKnowledgeChunks([
+      { category: "a", questions: "q1", answer: "a1" },
+      { category: "a", questions: "q2", answer: "a2" },
+      { category: "a", questions: "q3", answer: "a3" },
+    ]);
+    const rows = await db.prisma.knowledgeChunk.findMany({
+      orderBy: { id: "asc" },
+    });
+
+    expect(ids).toHaveLength(3);
+    expect(rows.map((row) => [row.prevChunkId, row.nextChunkId])).toEqual([
+      [null, ids[1]],
+      [ids[0], ids[2]],
+      [ids[1], null],
+    ]);
+  });
+
+  it("selects rows that need migration between dense backends", async () => {
+    const [id] = await repository.insertKnowledgeChunks([
+      { category: "a", questions: "q", answer: "a" },
+    ]);
+
+    expect(
+      (await repository.listChunksForVectorization(false, "model-a")).map(
+        (row) => row.id,
+      ),
+    ).toEqual([id]);
+    await repository.markChunkVectorized(id, String(id), [1, 0], "model-a");
+    expect(
+      (await repository.listChunksForVectorization(true, "model-a")).map(
+        (row) => row.id,
+      ),
+    ).toEqual([id]);
+    await repository.markChunkVectorizedExternal(id, String(id), "model-a");
+    expect(
+      (await repository.listChunksForVectorization(false, "model-a")).map(
+        (row) => row.id,
+      ),
+    ).toEqual([id]);
+    await repository.markChunkVectorized(id, String(id), [1, 0], "model-a");
+    expect(
+      (await repository.listChunksForVectorization(false, "model-b")).map(
+        (row) => row.id,
+      ),
+    ).toEqual([id]);
+  });
+
+  it("prioritizes unresolved faith cases before pagination", async () => {
+    await db.prisma.faithCase.createMany({
+      data: [
+        {
+          evalId: "resolved-new",
+          bucket: "a",
+          query: "q1",
+          answer: "a1",
+          reason: "r1",
+          status: "resolved",
+          lastSeenAt: new Date("2026-09-16T12:00:00Z"),
+        },
+        {
+          evalId: "unresolved-old",
+          bucket: "a",
+          query: "q2",
+          answer: "a2",
+          reason: "r2",
+          status: "unresolved",
+          lastSeenAt: new Date("2026-09-15T12:00:00Z"),
+        },
+      ],
+    });
+
+    const page = await repository.listFaithCases(null, 1, 1);
+
+    expect(page.rows[0]?.evalId).toBe("unresolved-old");
+    expect(page.total).toBe(2);
+  });
+
+  it("matches flywheel rows atomically", async () => {
+    const conversationId = await repository.createConversation("user-1");
+    const lowConfidenceId = await repository.insertLowConfidence(
+      conversationId,
+      "raw question",
+      "self_check",
+      null,
+    );
+
+    const first = await repository.matchLowConfidence(
+      lowConfidenceId,
+      "normalized question",
+      "suggested answer",
+      null,
+    );
+    const second = await repository.matchLowConfidence(
+      lowConfidenceId,
+      "normalized question",
+      "suggested answer",
+      null,
+    );
+
+    expect(first?.created).toBe(true);
+    expect(first?.reviewId).toBeTypeOf("number");
+    expect(second).toBeNull();
+    await expect(db.prisma.reviewQueue.count()).resolves.toBe(1);
+  });
+});

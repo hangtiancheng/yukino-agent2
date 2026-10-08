@@ -1,0 +1,480 @@
+@import "tailwindcss";
+
+/* Class-based dark mode: .dark sits on <html>, set by the inline script in root.tsx
+   before first paint. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------- Design tokens ----------
+   Every component consumes semantic roles only (bg-surface / text-on-surface /
+   border-outline-variant …). The dark theme flips the whole set — surfaces become
+   a blue-gray ramp, accents shift to their lighter counterparts — with zero
+   component changes. */
+:root {
+  /* Accent roles */
+  --primary: #0b57d0;
+  --on-primary: #ffffff;
+  --primary-container: #d3e3fd;
+  --on-primary-container: #041e49;
+
+  --secondary: #565f71;
+  --on-secondary: #ffffff;
+  --secondary-container: #dae2f9;
+  --on-secondary-container: #131c2b;
+
+  --tertiary: #7d57c4;
+  --on-tertiary: #ffffff;
+  --tertiary-container: #eaddff;
+  --on-tertiary-container: #4a2383;
+
+  /* Status roles */
+  --error: #b3261e;
+  --on-error: #ffffff;
+  --error-container: #f9dedc;
+  --on-error-container: #410e0b;
+
+  --success: #188038;
+  --on-success: #ffffff;
+  --success-container: #ceead6;
+  --on-success-container: #0d652d;
+
+  --warning: #a56a00;
+  --on-warning: #ffffff;
+  --warning-container: #feefc3;
+  --on-warning-container: #6a4800;
+
+  /* Surface roles */
+  --surface: #f8f9fc;
+  --surface-dim: #d9dce3;
+  --surface-bright: #ffffff;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f2f5fa;
+  --surface-container: #eceff5;
+  --surface-container-high: #e6e9f0;
+  --surface-container-highest: #e0e4ec;
+  --on-surface: #1b1d22;
+  --on-surface-variant: #454850;
+  --outline: #757880;
+  --outline-variant: #c5c8d0;
+  --inverse-surface: #303238;
+  --inverse-on-surface: #f2f4f9;
+  --scrim: #000000;
+
+  /* Raised card surface: white card over the tinted page in light mode,
+     one step above the page in dark mode */
+  --card: #ffffff;
+  --card-hover: #f2f5fa;
+
+  /* Always-dark surfaces for terminal output */
+  --terminal: #1a1d23;
+  --terminal-ink: #e8eaef;
+
+  /* Categorical chart palette */
+  --chart-1: #4285f4;
+  --chart-2: #ea4335;
+  --chart-3: #f9ab00;
+  --chart-4: #34a853;
+  --chart-5: #ff6d01;
+  --chart-6: #46bdc6;
+  --chart-7: #a142f4;
+  --chart-8: #f538a0;
+
+  /* Elevation: key + ambient shadow colors, deepened in the dark theme where
+     raised surfaces are already lighter than the page */
+  --e-key: rgb(0 0 0 / 22%);
+  --e-amb: rgb(0 0 0 / 10%);
+
+  color-scheme: light;
+}
+
+.dark {
+  --primary: #a8c7fa;
+  --on-primary: #062e6f;
+  --primary-container: #0842a0;
+  --on-primary-container: #d3e3fd;
+
+  --secondary: #bec6dc;
+  --on-secondary: #283041;
+  --secondary-container: #3e4759;
+  --on-secondary-container: #dae2f9;
+
+  --tertiary: #cfbcff;
+  --on-tertiary: #4c2a85;
+  --tertiary-container: #6242a3;
+  --on-tertiary-container: #eaddff;
+
+  --error: #ffb4ab;
+  --on-error: #690005;
+  --error-container: #93000a;
+  --on-error-container: #ffdad6;
+
+  --success: #81c995;
+  --on-success: #00391a;
+  --success-container: #1e4620;
+  --on-success-container: #c4eed0;
+
+  --warning: #fdd663;
+  --on-warning: #4c3800;
+  --warning-container: #6a5200;
+  --on-warning-container: #feefc3;
+
+  --surface: #121417;
+  --surface-dim: #121417;
+  --surface-bright: #383a40;
+  --surface-container-lowest: #0c0e11;
+  --surface-container-low: #1a1c20;
+  --surface-container: #1e2025;
+  --surface-container-high: #292b30;
+  --surface-container-highest: #34363b;
+  --on-surface: #e3e5ea;
+  --on-surface-variant: #c5c8d0;
+  --outline: #8f929a;
+  --outline-variant: #454850;
+  --inverse-surface: #e3e5ea;
+  --inverse-on-surface: #303238;
+
+  --card: #1e2025;
+  --card-hover: #292b30;
+
+  --terminal: #0c0e12;
+  --terminal-ink: #e8eaef;
+
+  --chart-1: #8ab4f8;
+  --chart-2: #f28b82;
+  --chart-3: #fdd663;
+  --chart-4: #81c995;
+  --chart-5: #fcad70;
+  --chart-6: #78d9ec;
+  --chart-7: #c58af9;
+  --chart-8: #ff8bcb;
+
+  --e-key: rgb(0 0 0 / 50%);
+  --e-amb: rgb(0 0 0 / 28%);
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  /* Accent roles */
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-secondary: var(--secondary);
+  --color-on-secondary: var(--on-secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-tertiary: var(--tertiary);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary-container: var(--on-tertiary-container);
+
+  /* Status roles */
+  --color-error: var(--error);
+  --color-on-error: var(--on-error);
+  --color-error-container: var(--error-container);
+  --color-on-error-container: var(--on-error-container);
+  --color-success: var(--success);
+  --color-on-success: var(--on-success);
+  --color-success-container: var(--success-container);
+  --color-on-success-container: var(--on-success-container);
+  --color-warning: var(--warning);
+  --color-on-warning: var(--on-warning);
+  --color-warning-container: var(--warning-container);
+  --color-on-warning-container: var(--on-warning-container);
+
+  /* Surface roles */
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-bright: var(--surface-bright);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-inverse-surface: var(--inverse-surface);
+  --color-inverse-on-surface: var(--inverse-on-surface);
+  --color-scrim: var(--scrim);
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-terminal: var(--terminal);
+  --color-terminal-ink: var(--terminal-ink);
+
+  /* Chart palette */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+
+  /* Interactive states: the matching on-color layered over the role color,
+     so hover/press derive correctly in both themes */
+  --color-primary-hover: color-mix(
+    in srgb,
+    var(--primary) 92%,
+    var(--on-primary)
+  );
+  --color-primary-pressed: color-mix(
+    in srgb,
+    var(--primary) 86%,
+    var(--on-primary)
+  );
+  --color-error-hover: color-mix(in srgb, var(--error) 92%, var(--on-error));
+  --color-error-pressed: color-mix(in srgb, var(--error) 86%, var(--on-error));
+  --color-success-hover: color-mix(
+    in srgb,
+    var(--success) 92%,
+    var(--on-success)
+  );
+  --color-primary-container-hover: color-mix(
+    in srgb,
+    var(--primary-container) 90%,
+    var(--on-primary-container)
+  );
+  --color-secondary-container-hover: color-mix(
+    in srgb,
+    var(--secondary-container) 90%,
+    var(--on-secondary-container)
+  );
+  --color-tertiary-container-hover: color-mix(
+    in srgb,
+    var(--tertiary-container) 90%,
+    var(--on-tertiary-container)
+  );
+  --color-error-container-hover: color-mix(
+    in srgb,
+    var(--error-container) 90%,
+    var(--on-error-container)
+  );
+  --color-success-container-hover: color-mix(
+    in srgb,
+    var(--success-container) 90%,
+    var(--on-success-container)
+  );
+  --color-warning-container-hover: color-mix(
+    in srgb,
+    var(--warning-container) 90%,
+    var(--on-warning-container)
+  );
+
+  /* Elevation levels: e1 resting cards → e5 dialogs */
+  --shadow-e1: 0 1px 2px 0 var(--e-key), 0 1px 3px 1px var(--e-amb);
+  --shadow-e2: 0 1px 2px 0 var(--e-key), 0 2px 6px 2px var(--e-amb);
+  --shadow-e3: 0 1px 3px 0 var(--e-key), 0 4px 8px 3px var(--e-amb);
+  --shadow-e4: 0 2px 3px 0 var(--e-key), 0 6px 10px 4px var(--e-amb);
+  --shadow-e5: 0 4px 4px 0 var(--e-key), 0 8px 12px 6px var(--e-amb);
+
+  /* Shape scale: xs chips/fields → xl dialogs */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 28px;
+  --radius-2xl: 32px;
+  --radius-3xl: 40px;
+
+  /* Type scale */
+  --text-headline-large: 32px;
+  --text-headline-large--line-height: 40px;
+  --text-headline-medium: 28px;
+  --text-headline-medium--line-height: 36px;
+  --text-headline-small: 24px;
+  --text-headline-small--line-height: 32px;
+  --text-title-large: 22px;
+  --text-title-large--line-height: 28px;
+  --text-title-medium: 16px;
+  --text-title-medium--line-height: 24px;
+  --text-title-medium--font-weight: 500;
+  --text-title-small: 14px;
+  --text-title-small--line-height: 20px;
+  --text-title-small--font-weight: 500;
+  --text-body-large: 16px;
+  --text-body-large--line-height: 24px;
+  --text-body-medium: 14px;
+  --text-body-medium--line-height: 20px;
+  --text-body-small: 12px;
+  --text-body-small--line-height: 16px;
+  --text-label-large: 14px;
+  --text-label-large--line-height: 20px;
+  --text-label-large--font-weight: 500;
+  --text-label-medium: 12px;
+  --text-label-medium--line-height: 16px;
+  --text-label-medium--font-weight: 500;
+  --text-label-small: 11px;
+  --text-label-small--line-height: 16px;
+  --text-label-small--font-weight: 500;
+
+  /* Motion curves: standard for most transitions, decelerate for entrances,
+     accelerate for exits */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-decel: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-accel: cubic-bezier(0.3, 0, 0.8, 0.15);
+
+  --font-sans:
+    Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
+    Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono:
+    "Roboto Mono", ui-monospace, "SF Mono", "Cascadia Mono", Consolas,
+    "PingFang SC", "Microsoft YaHei", monospace;
+}
+
+/* ---------- Base ---------- */
+html,
+body {
+  min-height: 100%;
+}
+
+html {
+  background-color: var(--surface);
+}
+
+/* App custom elements render into the light DOM (see lib/light-element.ts);
+   unknown tags default to display:inline, so make them layout-visible. */
+app-shell,
+chat-page,
+admin-page,
+kb-page,
+rageval-page,
+review-page,
+observability-page,
+topics-page,
+topic-questions-page,
+acceptance-page,
+acceptance-eval-page,
+acceptance-data-page,
+acceptance-errors-page,
+not-found-page,
+admin-nav,
+theme-toggle,
+toast-host,
+job-row,
+job-button,
+message-bubble,
+lottie-anim,
+grouped-bar-chart,
+scan-line-chart,
+ring-gauge,
+cite-popover,
+ticket-modal,
+refund-modal,
+approve-dialog,
+mobile-drawer,
+conv-sidebar,
+retrieval-panel,
+ledger-panel,
+ledger-case-card {
+  display: block;
+}
+
+/* Chat typing indicator: three dots bouncing in sequence */
+@keyframes typing-bounce {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+.typing-dot {
+  animation: typing-bounce 1s ease-in-out infinite;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--on-surface);
+  background-color: var(--surface);
+  /* Ambient tint: two soft radial glows anchored at the top corners. Fixed
+     attachment keeps them put while content scrolls; the dark theme dims them
+     below so the page never looks washed out. */
+  background-image:
+    radial-gradient(
+      60rem 40rem at 110% -10%,
+      color-mix(in srgb, var(--primary) 8%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      50rem 35rem at -10% 0%,
+      color-mix(in srgb, var(--tertiary) 7%, transparent),
+      transparent 55%
+    );
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.dark body {
+  background-image:
+    radial-gradient(
+      60rem 40rem at 110% -10%,
+      color-mix(in srgb, var(--primary) 5%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      50rem 35rem at -10% 0%,
+      color-mix(in srgb, var(--tertiary) 4%, transparent),
+      transparent 55%
+    );
+}
+
+::selection {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+/* Keyboard focus ring; text fields style their own focus state */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+
+/* Slim rounded scrollbar */
+.scroll-slim {
+  scrollbar-width: thin;
+  scrollbar-color: var(--outline-variant) transparent;
+}
+.scroll-slim::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.scroll-slim::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: var(--outline-variant);
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background-clip: content-box;
+}
+.scroll-slim::-webkit-scrollbar-thumb:hover {
+  background-color: var(--outline);
+}
+
+/* Table numeric columns: tabular figures, right-aligned */
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
