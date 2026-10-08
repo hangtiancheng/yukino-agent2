@@ -17,7 +17,7 @@
     "@yukino.js/lit-jsx": "latest",
     "chart.js": "^4.5.1",
     "lit": "^3.3.3",
-    "lucide-static": "^1.52.0",
+    "lucide-static": "^1.53.0",
     "motion": "^13.5.1"
   },
   "devDependencies": {
