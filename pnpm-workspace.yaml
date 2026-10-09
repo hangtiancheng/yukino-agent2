@@ -6,9 +6,8 @@ allowBuilds:
   esbuild: true
   sharp: true
 
-minimumReleaseAgeExclude:
-  - "@yukino.js/lit-jsx@0.0.1 || 0.0.5"
-
 packages:
   - client
   - server
+
+minimumReleaseAge: 0
