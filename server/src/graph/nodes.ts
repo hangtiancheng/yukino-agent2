@@ -180,7 +180,16 @@ export async function fallbackReply(state: GraphState): Promise<GraphUpdate> {
     reason += ` self_check=${typeof selfCheck === "string" ? selfCheck : ""}`;
   }
   const walkedRetrieval = Boolean(state.fallbackSource);
-  const snapshot = state.retrievedSnapshot ?? (walkedRetrieval ? [] : null);
+  // Tri-state snapshot semantics: a non-empty list = retrieval ran and hit something;
+  // [] = retrieval ran with zero hits (a strong "knowledge truly missing" signal shown
+  // as such on the review page); null = retrieval never ran. An empty array is truthy
+  // here, so the legacy `or`-style collapse must not be written as `??`.
+  const snapshot =
+    state.retrievedSnapshot && state.retrievedSnapshot.length > 0
+      ? state.retrievedSnapshot
+      : walkedRetrieval
+        ? []
+        : null;
   await repository.insertLowConfidence(
     state.conversationId,
     userText(state),

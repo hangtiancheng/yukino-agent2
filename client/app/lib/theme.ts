@@ -17,7 +17,9 @@ export function setTheme(theme: Theme): void {
   document.documentElement.classList.toggle("dark", theme === "dark");
   try {
     localStorage.setItem(KEY, theme);
-  } catch {}
+  } catch {
+    // private mode / blocked storage: keep the in-memory theme only
+  }
   emit();
 }
 

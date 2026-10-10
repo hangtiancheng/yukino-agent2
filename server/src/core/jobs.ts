@@ -247,7 +247,9 @@ export async function stop(name: string): Promise<void> {
   run.status = "stopped";
   try {
     process.kill(-pid, "SIGTERM");
-  } catch {}
+  } catch {
+    // the process group is already gone; nothing to terminate
+  }
   const done = new Promise<void>((resolve) => {
     if (child.exitCode !== null) {
       resolve();
@@ -260,7 +262,9 @@ export async function stop(name: string): Promise<void> {
   const timer = setTimeout(() => {
     try {
       process.kill(-pid, "SIGKILL");
-    } catch {}
+    } catch {
+      // the process group exited on its own before the escalation fired
+    }
   }, 10_000);
   await done;
   clearTimeout(timer);

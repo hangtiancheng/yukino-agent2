@@ -121,7 +121,9 @@ export class ChatPage extends LightElement {
         "/api/conversations?user_id=" + encodeURIComponent(getUserId()),
       );
       this.conversations = d.items ?? [];
-    } catch {}
+    } catch {
+      // sidebar history is best-effort; keep the current list on failure
+    }
   }
 
   private updateBot(id: number, fn: (m: BotMsg) => BotMsg): void {
@@ -351,7 +353,9 @@ export class ChatPage extends LightElement {
         }
       }
       this.messages = msgs;
-    } catch {}
+    } catch {
+      // history restore is best-effort; start from what we have on failure
+    }
     void this.loadConversations();
   }
 

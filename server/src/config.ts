@@ -118,7 +118,6 @@ export const settings = {
   summaryInjectSegments: num("SUMMARY_INJECT_SEGMENTS", 3),
   summaryTokensPerSegment: num("SUMMARY_TOKENS_PER_SEGMENT", 250),
   budgetSafetyMargin: num("BUDGET_SAFETY_MARGIN", 1000),
-  zhCharsPerToken: num("ZH_CHARS_PER_TOKEN", 1.2),
   enCharsPerToken: num("EN_CHARS_PER_TOKEN", 4),
 
   mcpLogisticsUrl: str("MCP_LOGISTICS_URL", "http://127.0.0.1:8101/mcp"),
