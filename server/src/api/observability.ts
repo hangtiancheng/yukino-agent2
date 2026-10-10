@@ -1,5 +1,3 @@
-// Observability page API: cost ledger, eval trend and confidence calibration, all read from
-// artifacts (or the eval_runs table for the trend). The page never recomputes numbers.
 import fs from "node:fs";
 import path from "node:path";
 
@@ -156,11 +154,8 @@ function calibrationBlock(): Record<string, unknown> {
   const inUse = settings.evidenceConfidenceThreshold;
   const recT =
     typeof recommended.threshold === "number" ? recommended.threshold : null;
-  // The scan row matching the in-use threshold, so the page shows pass/leak rates at BOTH lines.
   const inUseStats =
     scan.find((s) => Number(s.t) === Number(inUse.toFixed(2))) ?? null;
-  // Tri-state on purpose: a threshold deliberately above the recommendation is "conservative"
-  // (fewer false accepts), below it is "aggressive" (should-refuse cases may leak through).
   const inSync =
     recT === inUse
       ? "match"

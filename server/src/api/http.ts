@@ -1,4 +1,3 @@
-// HTTP helpers: zod request validation and error payloads with a `detail` field.
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { ZodType } from "zod";

@@ -1,4 +1,3 @@
-// Seed historical conversations (equivalent of sql/seed.sql) for the mining job.
 import { closeDb, prisma } from "#/db/client.ts";
 
 async function main(): Promise<void> {

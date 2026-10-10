@@ -11,10 +11,6 @@ import "~/routes/review";
 import { LightElement } from "~/lib/light-element";
 import { setRouter } from "~/lib/router";
 
-/* Route table. Query strings ride
-   location.search — the Router only matches pathnames — so pages that depend on
-   them (?label=, ?status=, ?page=) receive the current search as a property
-   from their render callback and reload when it changes. */
 const routes: RouteConfig[] = [
   { path: "/", render: () => <chat-page /> },
   { path: "/admin", render: () => <admin-page /> },

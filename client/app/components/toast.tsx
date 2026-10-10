@@ -5,10 +5,6 @@ import { Icon } from "~/lib/icons";
 import { LightElement } from "~/lib/light-element";
 import { fxEnter, fxOut } from "~/lib/motion";
 
-/* Global toast: bottom-center, stacks up to three, auto-dismisses after 3.6s.
-   A module-level service (toast()) plus one <toast-host> element mounted once
-   in main.ts. */
-
 export type ToastKind = "info" | "error";
 
 export interface ToastItem {
@@ -32,7 +28,6 @@ function emit(event: ToastEvent): void {
   }
 }
 
-/** Show a toast; isErr styles it as an error. Replaces the useToast() context. */
 export const toast: ToastFn = (msg, isErr) => {
   const id = nextId++;
   emit({ type: "push", item: { id, msg, kind: isErr ? "error" : "info" } });
@@ -87,8 +82,6 @@ export class ToastHost extends LightElement {
         {this.items.map((t) => (
           <div
             ref={(el: Element | undefined) => {
-              // Inline ref callbacks are re-invoked on every render (lit ref
-              // directive); the animated-set keeps the entrance one-shot.
               if (el instanceof HTMLElement) {
                 this.els.set(t.id, el);
                 if (!this.animated.has(t.id)) {

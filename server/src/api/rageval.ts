@@ -1,4 +1,3 @@
-// RAG evaluation report API: read the artifact written by the eval job, never recompute it.
 import fs from "node:fs";
 import path from "node:path";
 
@@ -121,8 +120,6 @@ export function hallucination(
   report: Record<string, unknown> | null,
   statusMap: Record<string, string>,
 ): HallucinationReport {
-  // Both rates are per-round: the ledger is a cross-round management view and must not
-  // become the numerator of a single-round rate.
   const gen = asRecord(report?.generation) ?? {};
   const parsed = hallucinationSchema.safeParse(gen);
   const data = parsed.success ? parsed.data : {};
@@ -207,8 +204,6 @@ export function overview(): Record<string, unknown> {
 }
 
 ragevalRouter.get("/api/rag-eval/overview", (c) => c.json(overview()));
-
-// ---------- fabrication case ledger ----------
 
 interface FaithCaseRow {
   id: number;

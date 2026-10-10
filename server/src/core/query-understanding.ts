@@ -1,5 +1,3 @@
-// Query understanding: colloquial -> standard phrasing + synonym expansion, and query expansion.
-// These steps only improve recall; failures degrade to the original query instead of failing the turn.
 import { z } from "zod";
 
 import { structured } from "./llm.ts";

@@ -1,13 +1,5 @@
 import { cn } from "./cn";
 
-/** Chart-reading note: if the artifact carries the sentence the model wrote about
- *  this round's numbers, use it (numbers auto-bolded); otherwise fall back to the
- *  page's hardcoded copy. Notes are generated and number-checked when the script
- *  writes the artifact (server/src/core/read-notes.ts); the frontend only displays them and
- *  no longer draws its own conclusions. */
-
-// Bold only real numbers, not digits inside names (the 25 in BM25, the 10 in
-// Recall@10, the 3 in qwen3.7-text-embedding-flash) — matching the boundary rule read-notes.ts validates with.
 const NUM_RE = /(?<![A-Za-z@_.\-\d])\d+(?:,\d{3})*(?:\.\d+)?%?(?![A-Za-z_])/g;
 
 function boldNumbers(s: string): unknown[] {

@@ -5,10 +5,6 @@ import { cn } from "~/lib/cn";
 import { LightElement } from "~/lib/light-element";
 import { EASE_ACCEL, EASE_DECEL, fxEnter, fxOut } from "~/lib/motion";
 
-/** Shared modal chrome: scrim + centered card with enter/exit animation, Esc to
-    close, backdrop click to close. Subclasses provide dialogTitle/dialogSub/
-    dialogBody; the card stays mounted while `visible` lags `open` so the exit
-    animation can play. */
 export abstract class ModalShell extends LightElement {
   @property({ type: Boolean }) open = false;
   @property({ attribute: false }) onClose?: () => void;
@@ -80,7 +76,6 @@ export abstract class ModalShell extends LightElement {
   protected abstract dialogSub(): string;
   protected abstract dialogBody(): unknown;
 
-  /** Max-width class for the dialog card; subclasses can widen it. */
   protected cardMaxW = "max-w-[440px]";
 
   protected override render() {

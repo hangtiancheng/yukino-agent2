@@ -1,4 +1,3 @@
-// Conversation memory: token counting, sliding-window anchors and layered compression.
 import {
   AIMessage,
   HumanMessage,
@@ -34,10 +33,6 @@ export function contentToString(content: BaseMessage["content"]): string {
 }
 
 export function countTokens(messages: BaseMessage[]): number {
-  // Mirrors langchain-core's count_tokens_approximately: per message count content chars +
-  // stringified tool_calls (AI) + tool_call_id (tool) + OpenAI role + name, then
-  // ceil(chars / en_chars_per_token) + 3 per message, and ceil the total. Calibrated for
-  // English via EN_CHARS_PER_TOKEN. All budgeting paths go through this one entry point.
   const cpt = settings.enCharsPerToken;
   let total = 0;
   for (const m of messages) {
@@ -82,7 +77,6 @@ export function tokensToChars(nTokens: number): number {
 }
 
 export function windowBudget(): number {
-  // An explicit override wins (used for rollback); otherwise derive from the window budget.
   if (settings.contextWindowMaxTokens > 0) {
     return settings.contextWindowMaxTokens;
   }
@@ -93,10 +87,6 @@ export function trimHistory(
   messages: BaseMessage[],
   maxTokens: number,
 ): BaseMessage[] {
-  // Keep the last messages within budget, starting on a human message (drop leading
-  // partial turns and tool results whose call was dropped). The start-on-human rule
-  // applies even when everything already fits — matching langchain-core's
-  // trimMessages(strategy="last", startOn="human", allowPartial=false).
   const out = [...messages];
   while (out.length > 0 && countTokens(out) > maxTokens) {
     out.shift();
@@ -107,12 +97,9 @@ export function trimHistory(
   return out;
 }
 
-// ---- anchor-based window slicing + summary injection ----
-
 const DB_ID_PREFIX = "db-";
 
 function dbMsgId(m: BaseMessage): number | null {
-  // The entry point tags user messages with HumanMessage.id = "db-<msg_id>".
   const id = m.id;
   if (typeof id === "string" && id.startsWith(DB_ID_PREFIX)) {
     const parsed = Number.parseInt(id.slice(DB_ID_PREFIX.length), 10);
@@ -143,11 +130,6 @@ export function buildWindow(
   layer1FromMsgId = 0,
   maxTokens: number | null = null,
 ): BaseMessage[] {
-  // Three layers by two anchors:
-  //   id <= summaryUpto           already summarized, not rendered
-  //   summaryUpto < id <= layer1  layer 2, half-compressed
-  //   id > layer1                 layer 1, verbatim
-  // Missing anchors degrade to a single verbatim layer plus token-based trimming.
   let window = messages.slice(indexAfter(messages, summaryUptoMsgId));
   if (layer1FromMsgId) {
     const split = indexAfter(window, layer1FromMsgId);
@@ -177,8 +159,6 @@ export function nextLayer1From(
   summaryUptoMsgId: number,
   layer1Budget: number,
 ): number {
-  // Move the layer-1 boundary in one step (not per turn) so the rendered prefix stays
-  // byte-stable between moves and the prompt cache survives.
   const window = messages.slice(indexAfter(messages, summaryUptoMsgId));
   let total = 0;
   for (let i = window.length - 1; i >= 0; i -= 1) {
@@ -201,8 +181,6 @@ export function summaryLine(summary: string | null): string {
 }
 
 export function summarySystem(summary: string | null): SystemMessage | null {
-  // The summary travels as a user-side text block (never a second SystemMessage):
-  // upstreams hoist system messages, which would push the tool schema out of the cacheable prefix.
   if (!summary) {
     return null;
   }
@@ -210,8 +188,6 @@ export function summarySystem(summary: string | null): SystemMessage | null {
     `## Summary of earlier conversation (earlier turns are compressed; the facts in it are trustworthy)\n${summary}`,
   );
 }
-
-// ---- layer 2: half-compressed rendering ----
 
 export function compressReply(
   text: string,
@@ -240,7 +216,6 @@ export function toLayer2(messages: BaseMessage[]): BaseMessage[] {
     if (HumanMessage.isInstance(m)) {
       out.push(m);
     } else if (AIMessage.isInstance(m)) {
-      // tool_calls must survive: the following ToolMessage references its tool_call_id.
       const text = contentToString(m.content);
       out.push(
         new AIMessage({

@@ -1,7 +1,3 @@
-// Chart annotations ("read notes") generated at report write time, then machine-verified.
-//
-// The note is generated when the artifact is written (not when the page renders), so the
-// dashboard never depends on a live model and every page load shows the same sentence.
 import type { ChatOpenAI } from "@langchain/openai";
 
 import { getChatModel } from "./llm.ts";
@@ -14,7 +10,6 @@ const log = childLogger("read-notes");
 const MAX_CHARS = 130;
 const TIMEOUT_MS = 120_000;
 
-// Numbers inside identifiers (p25, Recall@10, qwen3.7-text-embedding-flash) are not conclusions.
 const NUM_RE = /(?<![A-Za-z@_.\-\d])\d+(?:,\d{3})*(?:\.\d+)?(?![A-Za-z_])/g;
 
 const KINDS: Record<string, [string, string]> = {
@@ -64,7 +59,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function payloadNumbers(payload: unknown): Set<string> {
-  // Accept raw form, common decimal forms, percentages and the 1-x complement.
   const out = new Set<string>();
   const add = (x: number): void => {
     for (const s of [
@@ -143,9 +137,6 @@ export function tidy(text: string): string {
     .trim()
     .replace(/^["'“”‘’]+|["'“”‘’]+$/g, "");
   out = out.replaceAll(";", ",");
-  // A digit glued to the end of a word ("tokens8821") is invisible to NUM_RE's lookbehind,
-  // so a fabricated number would slip past verify(); split it off — but only after 3+ letters,
-  // so identifiers like p25 or bge-m3 keep their digits.
   out = out.replace(/(?<=[A-Za-z]{3})(?=\d)/g, " ");
   out = out.replace(/[!?.,…\s]+$/g, "");
   return out.endsWith(".") ? out : `${out}.`;

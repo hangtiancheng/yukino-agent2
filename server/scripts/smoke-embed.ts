@@ -1,9 +1,3 @@
-// Smoke: call the embedding upstream directly and verify connectivity and that the vectors are
-// well-formed. Requires EMBED_BASE_URL / EMBED_API_KEY in .env. Run: node scripts/smoke-embed.ts
-//
-// The expected dimension is model-dependent, so this checks the model-agnostic invariants
-// instead — every text yields a vector, all vectors share one dimension, and that dimension is
-// non-zero — then reports it.
 import { settings } from "#/config.ts";
 import { embedTexts } from "#/core/embeddings.ts";
 

@@ -1,4 +1,3 @@
-// Structured document chunk builder shared by the offline build job and the ingest API.
 import * as chunking from "./chunking.ts";
 
 const KEY_TERMS = [
@@ -14,7 +13,6 @@ const KEY_TERMS = [
   "period",
   "free shipping",
 ];
-// Re-exported: the confidence signal and review write-back share the same term list.
 export { KEY_TERMS };
 
 export interface Chunk {
@@ -27,7 +25,6 @@ export interface Chunk {
 }
 
 export function isKey(title: string, body: string): number {
-  // Case-insensitive: the English KB uses Title Case headings.
   const head = (title + body.slice(0, 40)).toLowerCase();
   return KEY_TERMS.some((t) => head.includes(t)) ? 1 : 0;
 }

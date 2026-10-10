@@ -1,8 +1,3 @@
-// Patch-style re-ingest: align data/kb/*.md chunks with DB rows by (section path, index)
-// and update only the bodies that changed. Never inserts or deletes:
-//  - sections present in the md but not in the DB are report-only (go through kb-build or the ingest page);
-//  - DB rows not present in any md are report-only (they are flywheel write-backs or manually
-//    ingested chunks that exist only in the DB — deleting them here would lose them for good).
 import fs from "node:fs";
 import path from "node:path";
 
@@ -24,7 +19,6 @@ async function main(): Promise<void> {
   const inDb = (
     await repository.listChunksByContentTypes(Object.values(SOURCE_TYPES))
   ).filter((row) => row.category !== "flywheel_review");
-  // A section path can map to several chunks (large tables are split); align by type + path + index.
   const byPath = new Map<string, typeof inDb>();
   for (const row of inDb) {
     const key = `${row.contentType ?? ""}\u0000${row.sectionPath ?? ""}`;

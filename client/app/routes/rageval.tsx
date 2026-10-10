@@ -28,10 +28,6 @@ import { DataLoaderElement } from "~/lib/page-element";
 import { ReadNote } from "~/lib/read-note";
 import type { JobSpec } from "~/lib/types";
 
-/* This page only renders the artifact served by /api/rag-eval/overview — not a single
-   number is recomputed on the client. The re-run button goes through the shared
-   /api/jobs runner (job name eval-rag) and revalidates once it finishes. */
-
 const STRAT: BarSeries[] = [
   { key: "vector", label: "Vector", color: "var(--chart-1)" },
   { key: "bm25", label: "BM25", color: "var(--chart-4)" },
@@ -48,8 +44,6 @@ const BUCKETS: BarGroup[] = [
 ];
 
 const METRICS = ["MRR", "Recall@5", "Evidence Coverage"] as const;
-
-/* ---------- Artifact shape ---------- */
 
 interface RefusalCase {
   id: string;
@@ -163,8 +157,6 @@ interface FaithCasesData {
 const fmt2 = (v?: number | null): string =>
   v === null || v === undefined ? "—" : v.toFixed(2);
 
-/* ---------- Value getters: one accessor per metric ---------- */
-
 function valFn(d: Overview, metric: string) {
   return (s: string, b: string): number | null | undefined => {
     if (metric === "MRR") {
@@ -177,14 +169,11 @@ function valFn(d: Overview, metric: string) {
       return d.evidence_coverage[s]?.[b] ?? 0;
     }
     if (metric === "Answer Coverage") {
-      // null = no case in this bucket got evaluated (upstream flakiness); drawing 0 would read as a real zero score
       return d.generation?.answer_coverage?.[s]?.[b];
     }
     return 0;
   };
 }
-
-/* ---------- KPI ---------- */
 
 function KpiBox({ d }: { d: Overview }) {
   const mrr = valFn(d, "MRR");
@@ -255,8 +244,6 @@ function KpiBox({ d }: { d: Overview }) {
   );
 }
 
-/* ---------- 01 Retrieval quality ---------- */
-
 @customElement("retrieval-panel")
 export class RetrievalPanel extends LightElement {
   @property({ attribute: false }) d?: Overview;
@@ -290,7 +277,6 @@ export class RetrievalPanel extends LightElement {
         fmt2(valFn(d, "Evidence Coverage")("bm25", "C_colloquial")) +
         " in the Colloquial bucket, leaving out facts the answer needs; hybrid + rerank reaches full coverage in all four buckets.",
     };
-    // One read-note per chart: prefer the model-written note from the artifact; fall back to the canned READ copy
     const NOTE_KIND: Record<string, string> = {
       MRR: "rag_mrr",
       "Recall@5": "rag_recall",
@@ -355,8 +341,6 @@ export class RetrievalPanel extends LightElement {
     );
   }
 }
-
-/* ---------- 02 Generation quality ---------- */
 
 function RefusalCases({ R }: { R: Generation["refusal"] }) {
   const cases = R.cases ?? [];
@@ -479,10 +463,9 @@ function GenerationPanel({ d }: { d: Overview }) {
             Faithfulness
           </SectionHead>
           <div class="mt-2 flex flex-col gap-3">
-            {/* Buckets follow BUCKETS above — don't duplicate the list here; the missing bucket is exactly the hardest one */}
             {BUCKETS.filter((x) => !x.agg).map((b) => {
               const f = G.faithfulness?.[b.key] ?? { v: null, answered: 0 };
-              const has = f.v !== null && f.v !== undefined; // not evaluated ≠ a score of 0
+              const has = f.v !== null && f.v !== undefined;
               const v = has ? (f.v ?? 0) : 0;
               return (
                 <div>
@@ -547,8 +530,6 @@ function GenerationPanel({ d }: { d: Overview }) {
   );
 }
 
-/* ---------- 03 Full data + this round's fabricated cases ---------- */
-
 function FaithCasesInline({ cases }: { cases: FaithCaseInline[] }) {
   if (!cases.length) {
     return (
@@ -559,7 +540,6 @@ function FaithCasesInline({ cases }: { cases: FaithCaseInline[] }) {
       </div>
     );
   }
-  // Bucket names follow BUCKETS above — don't hand-copy a second list
   const BMAP = Object.fromEntries(BUCKETS.map((b) => [b.key, b.label]));
   return (
     <details class="group bg-card border-outline-variant shadow-e1 mt-3 rounded-lg border">
@@ -695,10 +675,6 @@ function TablePanel({ d }: { d: Overview }) {
   );
 }
 
-/* ---------- 03.5 Fabricated-case ledger ---------- */
-
-/* Ledger status values are the backend enum (contract): they key the row classes and get
-   their English labels for display via STATUS_LABEL. */
 const ST_CLS: Record<string, string> = {
   unresolved: "bg-error-container text-on-error-container",
   resolved: "bg-success-container text-on-success-container",
@@ -711,11 +687,9 @@ const STATUS_LABEL: Record<string, string> = {
   dismissed: "Dismissed",
 };
 
-/** Two hallucination rates: judge-flagged (a lead volume, includes over-strict calls) and confirmed (only cases a human reviewed and fixed) */
 function HallucBox({ h }: { h: Hallucination }) {
   const pct = (v: number | null) =>
     v === null || v === undefined ? "—" : (v * 100).toFixed(1);
-  // Both hallucination kinds count: answerable questions "answered but fabricated" + out-of-KB questions "should-refuse leaks" (answered without evidence)
   const split = (cases: number) => (
     <>
       <b>{cases}</b> fabricated + <b>{h.refusal_missed}</b> should-refuse leaks
@@ -784,7 +758,6 @@ export class LedgerCaseCard extends LightElement {
   @state() private noteFor: string | null = null;
   @state() private note = "";
   @state() private posting = false;
-  /** Uncontrolled input (see chat.tsx for why); seeded/cleared when noteFor changes */
   private noteRef = createRef<HTMLInputElement>();
 
   protected override updated(
@@ -836,9 +809,6 @@ export class LedgerCaseCard extends LightElement {
     if (!c) {
       return null;
     }
-    // This list is the **full Top-K evidence set fed to the model**, not "what the answer cited" —
-    // answers usually cite only two or three of them. Keep the two apart: judging fabrication means
-    // looking at what was cited and at what was on hand but ignored
     const n = (c.citations ?? []).length;
     const used = [...new Set((c.answer ?? "").match(/\[(\d+)\]/g) ?? [])]
       .map((x) => Number.parseInt(x.slice(1, -1), 10))
@@ -885,7 +855,7 @@ export class LedgerCaseCard extends LightElement {
           </span>
           {c.reason ?? "—"}
         </div>
-        {/* Resolution note: marking resolved/dismissed requires an explanation (the two fields most worth revisiting, kept together) */}
+
         {c.resolution ? (
           <div class="mt-1.5 text-[12.5px] leading-7">
             <span class="text-on-surface-variant block text-[10.5px]">
@@ -985,7 +955,6 @@ export class LedgerCaseCard extends LightElement {
               disabled={this.posting}
               class={actBtn}
               onClick={() => {
-                // Reopening needs no note (it clears the existing one)
                 void this.post("unresolved", null);
               }}
             >
@@ -993,7 +962,7 @@ export class LedgerCaseCard extends LightElement {
             </button>
           ) : null}
         </div>
-        {/* Resolutions must leave a trail: expand an inline input first and block empty submissions (the backend rejects them too — this just saves a wasted round trip) */}
+
         {this.noteFor ? (
           <div class="mt-2 flex flex-wrap items-center gap-1.5">
             <input
@@ -1060,7 +1029,6 @@ export class LedgerPanel extends LightElement {
   protected override updated(
     changed: Map<string | number | symbol, unknown>,
   ): void {
-    // Refetch on tab/page change: the ledger is a cross-round management view, so it stays out of the route loader
     if (this.loaded && (changed.has("status") || changed.has("page"))) {
       void this.load();
     }
@@ -1189,8 +1157,6 @@ export class LedgerPanel extends LightElement {
   }
 }
 
-/* ---------- 04 How to read this report ---------- */
-
 const NOTES: [string, string][] = [
   [
     "Three query types, three blind spots",
@@ -1209,8 +1175,6 @@ const NOTES: [string, string][] = [
     "A mechanical low-score gate and a semantic self-check gate both run before generation. Weak evidence triggers a refusal and the question lands in low_confidence_questions; out-of-KB questions should all be refused.",
   ],
 ];
-
-/* ---------- Page ---------- */
 
 @customElement("rageval-page")
 export class RagEvalPage extends DataLoaderElement<Overview> {

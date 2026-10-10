@@ -1,15 +1,9 @@
-// Tool registry: builtin (scan on startup) + MCP (fetched per turn) unified as ToolSpec.
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { z } from "zod";
 
 import { childLogger } from "#/logger.ts";
 
 const log = childLogger("tools.registry");
 
-// Permissions are decided on our side, never by the server-provided description.
 export const WRITE_TOOLS = new Set(["create_ticket"]);
 
 export type ToolPermission = "read" | "write";
@@ -89,7 +83,6 @@ export interface DefineRawToolOptions {
 }
 
 export function defineRawTool(options: DefineRawToolOptions): ToolSpec {
-  // For tools whose schema is already JSON Schema (MCP server definitions).
   return {
     name: options.name,
     description: options.description,
@@ -109,6 +102,13 @@ export function defineRawTool(options: DefineRawToolOptions): ToolSpec {
 const builtin = new Map<string, ToolSpec>();
 let scanned = false;
 
+const BUILTIN_MODULES: { file: string; load: () => Promise<unknown> }[] = [
+  { file: "faq.ts", load: () => import("./builtin/faq.ts") },
+  { file: "orders.ts", load: () => import("./builtin/orders.ts") },
+  { file: "refunds.ts", load: () => import("./builtin/refunds.ts") },
+  { file: "tickets.ts", load: () => import("./builtin/tickets.ts") },
+];
+
 export function register(spec: ToolSpec): void {
   if (builtin.has(spec.name)) {
     log.warn(
@@ -121,25 +121,13 @@ export function register(spec: ToolSpec): void {
 }
 
 export async function scanBuiltin(): Promise<void> {
-  // Import every module in builtin/; each module registers its tools on import.
   if (scanned) {
     return;
   }
   scanned = true;
-  const dir = path.join(
-    path.dirname(fileURLToPath(import.meta.url)),
-    "builtin",
-  );
-  const files = fs
-    .readdirSync(dir)
-    .filter(
-      (f) =>
-        (f.endsWith(".ts") || f.endsWith(".js")) && !f.startsWith("index."),
-    )
-    .sort();
-  for (const file of files) {
+  for (const { file, load } of BUILTIN_MODULES) {
     try {
-      await import(new URL(`./builtin/${file}`, import.meta.url).href);
+      await load();
     } catch (error) {
       log.error(
         { err: error, file },
@@ -161,7 +149,6 @@ export async function getBuiltinSpec(name: string): Promise<ToolSpec | null> {
 }
 
 export async function getAllSpecs(): Promise<ToolSpec[]> {
-  // Order must stay stable: tool definitions live in the model's cacheable prefix.
   const merged = new Map<string, ToolSpec>();
   for (const spec of await builtinSpecs()) {
     merged.set(spec.name, spec);

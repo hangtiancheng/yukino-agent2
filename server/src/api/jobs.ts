@@ -1,4 +1,3 @@
-// Job API: the only entry point for the admin "re-run" buttons (start / status+log tail / stop).
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 

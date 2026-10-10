@@ -1,7 +1,3 @@
-// Question normalization and dedup fingerprints.
-// Strip everything that is not a Unicode letter (\p{L}, includes CJK) or number (\p{N}).
-// JS \w is ASCII-only, so the Unicode classes are used directly; this also removes invisible
-// format chars (U+200B) and combining marks that \p{P}/\p{S} would miss.
 const STRIP_RE = /[^\p{L}\p{N}]+/gu;
 
 export function normalizeQuestion(q: string): string {

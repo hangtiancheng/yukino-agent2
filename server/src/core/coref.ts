@@ -1,4 +1,3 @@
-// Coreference resolution + colloquial normalization. Failure returns the original query.
 import { getChatModel } from "./llm.ts";
 import { contentToString } from "./memory.ts";
 import { COREF_REWRITE_PROMPT } from "./prompts.ts";

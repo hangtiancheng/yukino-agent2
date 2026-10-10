@@ -1,4 +1,3 @@
-// Knowledge base API: material overview, chunk preview, ingest, vectorize, search, staging review.
 import fs from "node:fs";
 import path from "node:path";
 
@@ -104,9 +103,6 @@ async function existingFingerprints(): Promise<Set<string> | null> {
 }
 
 export async function milvusState(): Promise<Record<string, unknown>> {
-  // store.count() probes whichever dense backend is active: with MILVUS_URI set it is a real
-  // round-trip to Milvus Standalone ("offline" = Milvus unreachable); in legacy mode it is a
-  // relational read ("offline" = the DB read failed).
   try {
     return {
       online: true,
@@ -172,7 +168,6 @@ kbRouter.get("/api/kb/overview", async () => {
     dbError = `${error instanceof Error ? error.constructor.name : "Error"}: ${String(error)}`;
   }
 
-  // Dual-write consistency = nothing pending and the vector count matches the done count.
   let consistent: boolean | null = null;
   if (dbError === null && stats !== null && milvus.online === true) {
     consistent = stats.pending === 0 && stats.done === milvus.count;

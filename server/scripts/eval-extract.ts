@@ -1,6 +1,3 @@
-// Run labeled samples against /api/extract; check order_id and request_type
-// (expected_solution is eyeballed by a human). Requires the app running.
-// Run: node scripts/eval-extract.ts
 import fs from "node:fs";
 import path from "node:path";
 

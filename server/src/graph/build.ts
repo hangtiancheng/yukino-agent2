@@ -1,5 +1,3 @@
-// Graph wiring: skeleton (resolve -> classify -> route), refund sub-flow, evidence gate,
-// ReAct loop and deterministic exits.
 import { END, START, StateGraph } from "@langchain/langgraph";
 import type { BaseCheckpointSaver } from "@langchain/langgraph";
 

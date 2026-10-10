@@ -1,16 +1,8 @@
 @import "tailwindcss";
 
-/* Class-based dark mode: .dark sits on <html>, set by the inline script in root.tsx
-   before first paint. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ---------- Design tokens ----------
-   Every component consumes semantic roles only (bg-surface / text-on-surface /
-   border-outline-variant …). The dark theme flips the whole set — surfaces become
-   a blue-gray ramp, accents shift to their lighter counterparts — with zero
-   component changes. */
 :root {
-  /* Accent roles */
   --primary: #0b57d0;
   --on-primary: #ffffff;
   --primary-container: #d3e3fd;
@@ -26,7 +18,6 @@
   --tertiary-container: #eaddff;
   --on-tertiary-container: #4a2383;
 
-  /* Status roles */
   --error: #b3261e;
   --on-error: #ffffff;
   --error-container: #f9dedc;
@@ -42,7 +33,6 @@
   --warning-container: #feefc3;
   --on-warning-container: #6a4800;
 
-  /* Surface roles */
   --surface: #f8f9fc;
   --surface-dim: #d9dce3;
   --surface-bright: #ffffff;
@@ -59,16 +49,12 @@
   --inverse-on-surface: #f2f4f9;
   --scrim: #000000;
 
-  /* Raised card surface: white card over the tinted page in light mode,
-     one step above the page in dark mode */
   --card: #ffffff;
   --card-hover: #f2f5fa;
 
-  /* Always-dark surfaces for terminal output */
   --terminal: #1a1d23;
   --terminal-ink: #e8eaef;
 
-  /* Categorical chart palette */
   --chart-1: #4285f4;
   --chart-2: #ea4335;
   --chart-3: #f9ab00;
@@ -78,8 +64,6 @@
   --chart-7: #a142f4;
   --chart-8: #f538a0;
 
-  /* Elevation: key + ambient shadow colors, deepened in the dark theme where
-     raised surfaces are already lighter than the page */
   --e-key: rgb(0 0 0 / 22%);
   --e-amb: rgb(0 0 0 / 10%);
 
@@ -154,7 +138,6 @@
 }
 
 @theme inline {
-  /* Accent roles */
   --color-primary: var(--primary);
   --color-on-primary: var(--on-primary);
   --color-primary-container: var(--primary-container);
@@ -168,7 +151,6 @@
   --color-tertiary-container: var(--tertiary-container);
   --color-on-tertiary-container: var(--on-tertiary-container);
 
-  /* Status roles */
   --color-error: var(--error);
   --color-on-error: var(--on-error);
   --color-error-container: var(--error-container);
@@ -182,7 +164,6 @@
   --color-warning-container: var(--warning-container);
   --color-on-warning-container: var(--on-warning-container);
 
-  /* Surface roles */
   --color-surface: var(--surface);
   --color-surface-dim: var(--surface-dim);
   --color-surface-bright: var(--surface-bright);
@@ -203,7 +184,6 @@
   --color-terminal: var(--terminal);
   --color-terminal-ink: var(--terminal-ink);
 
-  /* Chart palette */
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -213,8 +193,6 @@
   --color-chart-7: var(--chart-7);
   --color-chart-8: var(--chart-8);
 
-  /* Interactive states: the matching on-color layered over the role color,
-     so hover/press derive correctly in both themes */
   --color-primary-hover: color-mix(
     in srgb,
     var(--primary) 92%,
@@ -263,14 +241,12 @@
     var(--on-warning-container)
   );
 
-  /* Elevation levels: e1 resting cards → e5 dialogs */
   --shadow-e1: 0 1px 2px 0 var(--e-key), 0 1px 3px 1px var(--e-amb);
   --shadow-e2: 0 1px 2px 0 var(--e-key), 0 2px 6px 2px var(--e-amb);
   --shadow-e3: 0 1px 3px 0 var(--e-key), 0 4px 8px 3px var(--e-amb);
   --shadow-e4: 0 2px 3px 0 var(--e-key), 0 6px 10px 4px var(--e-amb);
   --shadow-e5: 0 4px 4px 0 var(--e-key), 0 8px 12px 6px var(--e-amb);
 
-  /* Shape scale: xs chips/fields → xl dialogs */
   --radius-xs: 4px;
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -279,7 +255,6 @@
   --radius-2xl: 32px;
   --radius-3xl: 40px;
 
-  /* Type scale */
   --text-headline-large: 32px;
   --text-headline-large--line-height: 40px;
   --text-headline-medium: 28px;
@@ -310,21 +285,18 @@
   --text-label-small--line-height: 16px;
   --text-label-small--font-weight: 500;
 
-  /* Motion curves: standard for most transitions, decelerate for entrances,
-     accelerate for exits */
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-decel: cubic-bezier(0.05, 0.7, 0.1, 1);
   --ease-accel: cubic-bezier(0.3, 0, 0.8, 0.15);
 
   --font-sans:
-    'Yukino', 'Maple Mono', Menlo, 'Cascadia Code', 'Sarasa Gothic SC', 'PingFang SC',
-    'Microsoft YaHei', sans-serif;
+    "Yukino", "Maple Mono", Menlo, "Cascadia Code", "Sarasa Gothic SC",
+    "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-mono:
-    'Yukino', 'Maple Mono', Menlo, 'Cascadia Code', 'Sarasa Gothic SC', 'PingFang SC',
-    'Microsoft YaHei', monospace;
+    "Yukino", "Maple Mono", Menlo, "Cascadia Code", "Sarasa Gothic SC",
+    "PingFang SC", "Microsoft YaHei", monospace;
 }
 
-/* ---------- Base ---------- */
 html,
 body {
   min-height: 100%;
@@ -334,8 +306,6 @@ html {
   background-color: var(--surface);
 }
 
-/* App custom elements render into the light DOM (see lib/light-element.ts);
-   unknown tags default to display:inline, so make them layout-visible. */
 app-shell,
 chat-page,
 admin-page,
@@ -372,7 +342,6 @@ ledger-case-card {
   display: block;
 }
 
-/* Chat typing indicator: three dots bouncing in sequence */
 @keyframes typing-bounce {
   0%,
   100% {
@@ -392,9 +361,6 @@ body {
   font-family: var(--font-sans);
   color: var(--on-surface);
   background-color: var(--surface);
-  /* Ambient tint: two soft radial glows anchored at the top corners. Fixed
-     attachment keeps them put while content scrolls; the dark theme dims them
-     below so the page never looks washed out. */
   background-image:
     radial-gradient(
       60rem 40rem at 110% -10%,
@@ -430,7 +396,6 @@ body {
   color: var(--on-primary-container);
 }
 
-/* Keyboard focus ring; text fields style their own focus state */
 :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
@@ -441,7 +406,6 @@ select:focus-visible {
   outline: none;
 }
 
-/* Slim rounded scrollbar */
 .scroll-slim {
   scrollbar-width: thin;
   scrollbar-color: var(--outline-variant) transparent;
@@ -463,7 +427,6 @@ select:focus-visible {
   background-color: var(--outline);
 }
 
-/* Table numeric columns: tabular figures, right-aligned */
 .num {
   text-align: right;
   font-variant-numeric: tabular-nums;

@@ -1,4 +1,3 @@
-// Faithfulness judge regression: replay human-reviewed fabrication cases and compare verdicts.
 import { z } from "zod";
 
 import { structured } from "#/core/llm.ts";
@@ -17,7 +16,6 @@ const faithSchema = z.object({
 });
 
 function citationsOf(raw: string | null): CitationSnapshot {
-  // citations is stored as a JSON string column; parse it once, reuse everywhere.
   return parseWith(citationSchema, raw) ?? [];
 }
 
@@ -38,8 +36,6 @@ function expectedFaithful(status: string): boolean | null {
 }
 
 const { rows, total, counts } = await repository.listFaithCases(null, 1, 200);
-// Gradable = has a human verdict AND kept its citation snapshot; a stored "[]" is an
-// empty snapshot (old cases), not evidence, so parse before filtering.
 const cases = rows
   .map((r) => ({ row: r, citations: citationsOf(r.citations) }))
   .filter(

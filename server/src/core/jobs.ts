@@ -1,5 +1,3 @@
-// Background job runner for admin pages: start / tail / stop registered jobs only.
-// argv is fixed here; the front end can only submit a job name, never a shell fragment.
 import { spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
 import fs from "node:fs";
@@ -44,7 +42,6 @@ function spec(
 
 export const JOBS: Record<string, JobSpec> = Object.fromEntries(
   [
-    // knowledge base build pipeline
     spec(
       "kb-preview",
       "Material list & chunk preview",
@@ -101,7 +98,6 @@ export const JOBS: Record<string, JobSpec> = Object.fromEntries(
       "Requires the local DB; empties the knowledge base",
       true,
     ),
-    // RAG evaluation / flywheel / cost reports
     spec(
       "eval-rag",
       "RAG evaluation (four-strategy comparison)",
@@ -219,12 +215,10 @@ export async function start(name: string): Promise<JobRun> {
     run.proc = null;
     log.info({ job: name, rc: code, status: run.status }, "job finished");
   });
-  // Wait for the spawn outcome so a command that cannot start (missing executable)
-  // surfaces as an immediate start failure (the API answers 500). Node reports the failure
-  // via the async "error" event, so race it against the "spawn" success event
-  // (both fire right after fork+exec, so healthy jobs are not delayed).
   const spawned = await new Promise<boolean>((resolve) => {
-    const timer = setTimeout(() => { resolve(true); }, 10_000);
+    const timer = setTimeout(() => {
+      resolve(true);
+    }, 10_000);
     child.once("spawn", () => {
       clearTimeout(timer);
       resolve(true);
@@ -253,9 +247,7 @@ export async function stop(name: string): Promise<void> {
   run.status = "stopped";
   try {
     process.kill(-pid, "SIGTERM");
-  } catch {
-    // already gone
-  }
+  } catch {}
   const done = new Promise<void>((resolve) => {
     if (child.exitCode !== null) {
       resolve();
@@ -268,9 +260,7 @@ export async function stop(name: string): Promise<void> {
   const timer = setTimeout(() => {
     try {
       process.kill(-pid, "SIGKILL");
-    } catch {
-      // already gone
-    }
+    } catch {}
   }, 10_000);
   await done;
   clearTimeout(timer);

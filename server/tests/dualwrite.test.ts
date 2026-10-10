@@ -78,8 +78,6 @@ describe("knowledge dual write", () => {
       true,
       settings.embedModel,
     );
-    // The BM25 source text rides along with the dense vector: category + questions + answer,
-    // the same string that was embedded (the Milvus BM25 Function derives sparse from it).
     expect(mocks.upsert).toHaveBeenCalledWith([
       {
         id: 7,
@@ -113,7 +111,6 @@ describe("knowledge dual write", () => {
 
     await expect(vectorizePending(64)).resolves.toBe(45);
 
-    // 45 texts in one 64-row batch must go upstream as 20 + 20 + 5 (gateway cap).
     expect(
       mocks.embedTexts.mock.calls.map((call: unknown[]) => {
         const texts = call[0];

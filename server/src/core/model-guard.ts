@@ -1,5 +1,3 @@
-// Model-number guard: any product model mentioned in an answer must appear verbatim in
-// the evidence. Mechanical check (regex), no extra judge call.
 const MODEL_RE = /MH-[A-Za-z]{1,4}\d{1,4}/g;
 
 export function modelsIn(text: string): string[] {
@@ -16,7 +14,6 @@ export function unsupportedModels(answer: string, evidence: string): string[] {
 }
 
 export function repairHint(bad: string[]): string {
-  // Only name the unsupported models; guessing the right one would create a new hallucination.
   return (
     "These model numbers in the previous answer cannot be found in the evidence given to you: " +
     bad.join(", ") +

@@ -1,7 +1,3 @@
-// workflow end-to-end acceptance evaluation. Requires the full stack running
-// (DB + MCP servers + chat upstream + this app). Run: node scripts/eval-workflow.ts
-// Uses /api/agent (non-streaming, so tool traces and suggested_actions are visible);
-// acceptance 1 is checked in the app logs, the frontend half of acceptance 3 in the browser.
 import { z } from "zod";
 
 import { settings } from "#/config.ts";
@@ -34,7 +30,6 @@ const agentResponseSchema = z.object({
 type AgentResponse = z.infer<typeof agentResponseSchema>;
 
 async function agent(message: string): Promise<AgentResponse> {
-  // Each case uses a fresh conversation (conversation_id = null) to avoid cross-case context pollution.
   const resp = await fetch(`${BASE}/api/agent`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -60,7 +55,6 @@ interface CaseResult {
 async function main(): Promise<void> {
   const results: CaseResult[] = [];
 
-  // Acceptance 2: business-data question, the agent calls tools itself (logistics needs the order -> query_order + query_logistics)
   const b2 = await agent("Where is the logistics for order 1001");
   const names2 = new Set(b2.tool_calls.map((tc) => tc.name));
   results.push({
@@ -69,7 +63,6 @@ async function main(): Promise<void> {
     detail: JSON.stringify([...names2].sort()),
   });
 
-  // Acceptance 3 (backend half): a complaint offers both "transfer to human" and "create ticket"; the backend creates nothing by itself
   const b3 = await agent("I want to complain, your service is terrible");
   const types3 = new Set(b3.suggested_actions.map((a) => a.type));
   results.push({
@@ -78,7 +71,6 @@ async function main(): Promise<void> {
     detail: JSON.stringify([...types3].sort()),
   });
 
-  // Acceptance 4: chitchat gets the fixed script, zero tools
   const b4 = await agent("Hello there");
   results.push({
     name: "Acceptance 4 chitchat fixed script with zero tools",
@@ -86,7 +78,6 @@ async function main(): Promise<void> {
     detail: b4.answer.slice(0, 24),
   });
 
-  // Acceptance 5: complex question -> true sequential multi-step (query_logistics needs the tracking_no produced by query_order)
   const b5 = await agent(
     "Has the order ending in 1001 shipped? Where is it now?",
   );

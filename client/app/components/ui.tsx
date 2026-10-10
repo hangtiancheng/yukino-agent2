@@ -3,12 +3,6 @@ import "~/components/lottie";
 import { cn } from "~/lib/cn";
 import { enterOnce } from "~/lib/motion";
 
-/* Shared presentational primitives (lit-jsx functional components — called on
-   every render, no state of their own; Lit reactivity lives in the page
-   elements that compose them). */
-
-/* ---------- Buttons ---------- */
-
 export type BtnVariant = "default" | "go" | "no" | "ok" | "tonal" | "text";
 export type BtnSize = "md" | "sm";
 
@@ -69,7 +63,6 @@ export interface BtnLinkProps {
   children?: unknown;
 }
 
-/** Button-styled link (in-app navigation; the Router intercepts the click) */
 export function BtnLink({
   to,
   variant = "default",
@@ -92,8 +85,6 @@ export function BtnLink({
     </a>
   );
 }
-
-/* ---------- Status pills ---------- */
 
 export type PillTone =
   | "pass"
@@ -137,8 +128,6 @@ export function Pill({ tone = "plain", class: cls, children }: PillProps) {
     </span>
   );
 }
-
-/* ---------- Panel / top bar / page shell ---------- */
 
 export interface PanelProps {
   title?: unknown;
@@ -214,8 +203,6 @@ export interface PageShellProps {
   children?: unknown;
 }
 
-/** Shared shell for admin pages: top bar + nav + content (with entrance animation).
-    Content spans the full viewport width; pass maxW to constrain and center it. */
 export function PageShell({
   title,
   sub,
@@ -239,8 +226,6 @@ export function PageShell({
     </div>
   );
 }
-
-/* ---------- Gate-bar stats ---------- */
 
 export interface StatProps {
   label: unknown;
@@ -273,8 +258,6 @@ export function GateBar({ children }: { children?: unknown }) {
   return <div class="mt-4 flex flex-wrap items-stretch gap-3">{children}</div>;
 }
 
-/* ---------- Tips / placeholders ---------- */
-
 export interface TipProps {
   children?: unknown;
   class?: string;
@@ -298,7 +281,6 @@ export interface MissingBoxProps {
   class?: string;
 }
 
-/** Shared placeholder for a missing artifact: states what is missing and which target to run */
 export function MissingBox({ children, class: cls }: MissingBoxProps) {
   return (
     <div
@@ -312,8 +294,6 @@ export function MissingBox({ children, class: cls }: MissingBoxProps) {
     </div>
   );
 }
-
-/* ---------- Table primitives ---------- */
 
 export function TableScroll({
   children,
@@ -405,16 +385,11 @@ export function Tr({ children, bad, class: cls }: TrProps) {
   );
 }
 
-/* ---------- Numeric cell: 3 decimals + bar ---------- */
-
 export interface ScoreCellProps {
   v?: number | null;
   redLine?: number | null;
 }
 
-/** Scores in 0–1 (like F1) are drawn this way so highs and lows are easy to scan.
- *  hi/lo coloring only applies when a red line is given — with no line there should
- *  be no implied pass/fail. */
 export function ScoreCell({ v, redLine }: ScoreCellProps) {
   const width = Math.max(3, Math.round((v ?? 0) * 100));
   const hasLine = redLine !== null && redLine !== undefined;
@@ -443,8 +418,6 @@ export function ScoreCell({ v, redLine }: ScoreCellProps) {
   );
 }
 
-/* ---------- Small boxed value ---------- */
-
 export function KvBox({ label, value }: { label: unknown; value: unknown }) {
   return (
     <div class="bg-surface-container-high text-on-surface-variant text-label-small min-w-[88px] rounded-md px-3 py-2">
@@ -459,8 +432,6 @@ export function KvBox({ label, value }: { label: unknown; value: unknown }) {
 export function KvRow({ children }: { children?: unknown }) {
   return <div class="mt-3 flex flex-wrap gap-2">{children}</div>;
 }
-
-/* ---------- Section heading ---------- */
 
 export interface SectionHeadProps {
   children?: unknown;
@@ -480,8 +451,6 @@ export function SectionHead({ children, unit, class: cls }: SectionHeadProps) {
     </div>
   );
 }
-
-/* ---------- Page-level loading placeholder ---------- */
 
 export function PageLoading({ label }: { label?: string }) {
   return (

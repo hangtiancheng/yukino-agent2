@@ -22,11 +22,6 @@ import { DataLoaderElement } from "~/lib/page-element";
 import { ReadNote } from "~/lib/read-note";
 import type { JobSpec } from "~/lib/types";
 
-/* Each of the three reports renders exactly what /api/observability/overview
-   serves: cost and calibration come from main.js-produced artifacts, trends from
-   the eval_runs table — the page never recomputes a single number. Delta
-   arrows are pairwise diffs over the same rows, not a separate dataset. */
-
 const METRIC_LABEL: Record<string, string> = {
   recall_at_5: "Recall@5",
   recall_at_10: "Recall@10",
@@ -34,7 +29,7 @@ const METRIC_LABEL: Record<string, string> = {
   faithfulness: "Faithfulness",
   refusal_rate: "Refusal rate",
 };
-const DELTA_EPS = 0.005; // Same cutoff as the terminal trend table: movement below it counts as flat
+const DELTA_EPS = 0.005;
 
 interface CostRow {
   intent: string;
@@ -109,9 +104,7 @@ interface CalibrationBlock {
   };
   read_note: string | null;
   in_use: number;
-  // The scan row matching the threshold in use (pass/leak rates at BOTH lines).
   in_use_stats: { t: number; pass_rate: number; leak_rate: number } | null;
-  // Tri-state: "conservative" (in use above the recommendation) is deliberate, not attention.
   in_sync: "match" | "conservative" | "aggressive";
 }
 
@@ -161,7 +154,6 @@ export class ObservabilityPage extends DataLoaderElement<Overview> {
     return api<Overview>("/api/observability/overview");
   }
 
-  /** Footer shared by all three panels: re-run button + log output, invoking the same task as the terminal */
   private jobFoot(block: { job: JobSpec; task: string }) {
     return (
       <div>
@@ -491,11 +483,11 @@ export class ObservabilityPage extends DataLoaderElement<Overview> {
           : d.in_sync === "conservative"
             ? "Above the recommendation (more conservative: lower false-accept rate)"
             : "Below the recommendation — should-refuse cases may leak through; backfill EVIDENCE_CONFIDENCE_THRESHOLD in .env";
-      // Pass/leak KPIs: show the rates at the threshold in use when the scan has that row,
-      // otherwise fall back to the recommended line's rates.
       const showPass = ius ? ius.pass_rate : rec.pass_rate;
       const showLeak = ius ? ius.leak_rate : rec.leak_rate;
-      const atLabel = ius ? ` (at the in-use threshold ${Number(d.in_use).toFixed(2)})` : "";
+      const atLabel = ius
+        ? ` (at the in-use threshold ${Number(d.in_use).toFixed(2)})`
+        : "";
       body.push(
         Kpis({
           items: [

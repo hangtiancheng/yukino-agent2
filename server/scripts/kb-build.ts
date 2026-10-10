@@ -1,4 +1,3 @@
-// Offline build: chunk data/kb/*.md into knowledge_chunks as pending rows.
 import fs from "node:fs";
 import path from "node:path";
 

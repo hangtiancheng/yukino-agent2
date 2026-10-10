@@ -3,10 +3,6 @@ import { createRef, customElement, property } from "@yukino.js/lit-jsx";
 
 import { LightElement } from "~/lib/light-element";
 
-/** Decorative Lottie animation (dotLottie player). Assets are self-hosted under
-    /lottie/ and the player WASM under /wasm/ (wired up in main.ts via
-    DotLottie.setWasmUrl) — no runtime CDN dependency. Size the host element with
-    a class; the canvas fills it. */
 @customElement("lottie-anim")
 export class LottieAnim extends LightElement {
   @property() src = "";

@@ -1,4 +1,3 @@
-// Single Prisma client bound to the PostgreSQL database from DATABASE_URL.
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { settings } from "#/config.ts";

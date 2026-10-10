@@ -1,5 +1,3 @@
-// JSON column helpers. Values crossing the DB boundary are validated with zod
-// instead of type assertions.
 import { z } from "zod";
 
 const rawParse: (text: string) => unknown = JSON.parse;

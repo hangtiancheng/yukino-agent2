@@ -1,6 +1,3 @@
-// Knowledge mining eval: run extraction over sample dialogs; what should be mined is mined, and what
-// should not (pure one-off cases) is not force-mined. Requires chat upstream.
-// Run: node scripts/eval-mining.ts
 import fs from "node:fs";
 import path from "node:path";
 

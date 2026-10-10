@@ -10,8 +10,6 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Yukino Select</title>
     <script>
-      // Decide light/dark before first paint to avoid a theme flash
-      // (mirrors app/lib/theme.ts: stored preference, else system setting).
       (function () {
         try {
           var t = localStorage.getItem("yukino_agent2_theme");

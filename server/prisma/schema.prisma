@@ -1,5 +1,3 @@
-// yukino-agent2 server data model (PostgreSQL via Prisma driver adapter).
-// Enum-like columns are plain strings; the allowed values live in src/db/constants.js.
 
 generator client {
   provider = "prisma-client"
@@ -87,7 +85,6 @@ model KnowledgeChunk {
   nextChunkId     Int?
   vectorId        String?
   vectorizeStatus String   @default("pending")
-  // Dense embedding (JSON array of floats) written by the vectorize step.
   embedding       String?
   embeddingModel  String?
   createdAt       DateTime @default(now())

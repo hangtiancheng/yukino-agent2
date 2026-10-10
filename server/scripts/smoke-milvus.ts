@@ -1,16 +1,3 @@
-// Smoke Milvus Standalone end to end: drive the Node SDK client (src/kb/milvus.ts) through
-// upsert -> dense search -> native BM25 search -> hybrid (RRF) search -> count -> delete ->
-// drop against a throwaway "smoke" collection. A failure is a red line: stop.
-//
-// Red line: dense, in-Milvus BM25 (BM25 Function over the analyzer-enabled text field) and
-// in-Milvus hybrid RRF must all be live. The throwaway collection never touches a real
-// knowledge base.
-// Run: node scripts/smoke-milvus.ts
-// (requires a running Milvus Standalone — start it with `node main.js milvus-up`; override
-// the address with MILVUS_URI, default http://127.0.0.1:19530)
-
-// Point the client at the throwaway collection BEFORE config.ts is imported (loadEnvFile
-// does not override an already-set process.env value).
 import type { MilvusHit, MilvusRow } from "#/kb/milvus.ts";
 
 process.env.MILVUS_URI ||= "http://127.0.0.1:19530";
@@ -22,12 +9,8 @@ const sleep = (ms: number): Promise<void> =>
 async function main(): Promise<void> {
   const milvus = await import("#/kb/milvus.ts");
 
-  // Clean slate first: a previous run may have left a collection behind, and one created
-  // before the BM25 alignment (dense-only schema) would trip the schema guard.
   await milvus.drop().catch(() => undefined);
 
-  // Wait for Milvus to accept calls (a freshly started Standalone needs a moment). count()
-  // fails fast with a connection error while it is down, so polling is cheap.
   let ready = false;
   for (let i = 0; i < 24; i += 1) {
     try {
@@ -46,8 +29,6 @@ async function main(): Promise<void> {
   console.log(`Milvus ready on ${process.env.MILVUS_URI} (collection=smoke)`);
 
   try {
-    // text mirrors what dualwrite.vectorizePending writes: category + question + answer,
-    // the same string that feeds the dense embedding.
     const rows: MilvusRow[] = [
       {
         id: 1,
@@ -95,8 +76,6 @@ async function main(): Promise<void> {
     if (upserted !== 4) {
       throw new Error(`expected 4 rows upserted, got ${upserted}`);
     }
-    // Flushed data still needs a moment before the sparse index serves the new segment, so
-    // the BM25 assertions below retry for a few seconds.
     await milvus.flush();
 
     const total = await milvus.count();
@@ -105,7 +84,6 @@ async function main(): Promise<void> {
       throw new Error(`expected count 4, got ${total}`);
     }
 
-    // The query vector equals row 1, so COSINE should rank id=1 first at ~1.0.
     const hits = await milvus.search([0.1, 0.2, 0.3, 0.4], 3, null);
     console.log(
       "search:",
@@ -124,7 +102,6 @@ async function main(): Promise<void> {
       );
     }
 
-    // A category filter must exclude the other categories.
     const filtered = await milvus.search([0.1, 0.2, 0.3, 0.4], 3, "refund");
     console.log(
       "filtered(refund):",
@@ -134,7 +111,6 @@ async function main(): Promise<void> {
       throw new Error("category filter leaked rows from other categories");
     }
 
-    // Native BM25: model-number keywords should hit the manual row by term match.
     let bm25: MilvusHit[] = [];
     for (let i = 0; i < 10; i += 1) {
       bm25 = await milvus.bm25Search("litter box Pro auto-cleaning", 2, null);
@@ -156,7 +132,6 @@ async function main(): Promise<void> {
       throw new Error(`expected BM25 to rank id 4 first, got ${bm25[0].id}`);
     }
 
-    // Hybrid RRF inside Milvus: dense near row 1 + the shipping-fee terms should fuse row 1 in.
     let hybrid: MilvusHit[] = [];
     for (let i = 0; i < 10; i += 1) {
       hybrid = await milvus.hybridSearch(

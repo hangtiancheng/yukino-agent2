@@ -1,13 +1,8 @@
-// intent red-line smoke: the interrupt / Command(resume) surface shapes on the current langgraph.
-// Does NOT call the chat upstream — only a pure interrupt node. Run: node scripts/smoke-interrupt.ts
-//
-// Pins down four things (for fetch_order / runtime):
-//   A) invoke() on an interrupt: the __interrupt__ key structure and value access path
-//   B) Command(resume=v) resumes, and v becomes the interrupt() return value
-//   C) stream(streamMode=["messages","updates"]): which chunk the interrupt appears in
-//      (vs C' getState probing pending)
-//   D) calling the interrupted node directly (no runnable context): the GraphInterrupt payload
-import { AIMessage, HumanMessage, type BaseMessage } from "@langchain/core/messages";
+import {
+  AIMessage,
+  HumanMessage,
+  type BaseMessage,
+} from "@langchain/core/messages";
 import {
   Annotation,
   Command,
@@ -42,9 +37,6 @@ interface SelectOrderPayload {
   orders: OrderOption[];
 }
 
-// interrupt() is synchronous: it throws GraphInterrupt on the first pass and returns the resume
-// value when resumed. These nodes therefore need no await (and must not be async, or the linter
-// flags require-await).
 function askOrder(_state: SState): Partial<SState> {
   const picked = interrupt<SelectOrderPayload, string>({
     type: "select_order",
@@ -67,14 +59,12 @@ function build() {
     .compile({ checkpointer: new MemorySaver() });
 }
 
-// The langgraph stream types are loose; validate chunk shapes at the boundary instead of casting.
 const streamTupleSchema = z.tuple([z.string(), z.unknown()]);
 const updatesChunkSchema = z.record(z.string(), z.unknown());
 
 async function main(): Promise<void> {
   const graph = build();
 
-  // A) Non-streaming: the first run should carry __interrupt__
   const config = { configurable: { thread_id: "smoke-int-1" } };
   const out = await graph.invoke(
     { messages: [new HumanMessage("I want a refund")] },
@@ -88,7 +78,6 @@ async function main(): Promise<void> {
     console.log("A __interrupt__= (none)");
   }
 
-  // B) Non-streaming resume
   const out2 = await graph.invoke(new Command({ resume: "1001" }), config);
   console.log(
     "B resume picked=",
@@ -97,7 +86,6 @@ async function main(): Promise<void> {
     JSON.stringify(out2.messages.map((m) => contentToString(m.content))),
   );
 
-  // C) Streaming: which chunk carries the interrupt
   const streamModes: ("messages" | "updates")[] = ["messages", "updates"];
   const config2 = {
     configurable: { thread_id: "smoke-int-2" },
@@ -124,7 +112,6 @@ async function main(): Promise<void> {
       );
     }
   }
-  // C') After streaming, probe pending (an alternate detection path)
   const snap = await graph.getState(config2);
   console.log(
     "C' getState .next=",
@@ -132,7 +119,6 @@ async function main(): Promise<void> {
     "tasks_interrupts=",
     JSON.stringify(snap.tasks.map((t) => t.interrupts)),
   );
-  // C'') Streaming resume
   console.log("C'' stream resume:");
   const stream2 = await graph.stream(new Command({ resume: "2002" }), config2);
   for await (const chunk of stream2) {
@@ -144,8 +130,6 @@ async function main(): Promise<void> {
     console.log("  ", mode, JSON.stringify(payload));
   }
 
-  // D) Call the interrupted node directly (no runnable context) — record interrupt()'s real
-  // behaviour outside a graph.
   try {
     askOrder({ messages: [], picked: "" });
     console.log("D no error (unexpected)");

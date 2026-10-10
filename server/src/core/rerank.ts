@@ -1,4 +1,3 @@
-// Rerank upstream client (not OpenAI protocol). Two wire shapes, picked via RERANK_PROTOCOL:
 import { z } from "zod";
 
 import { settings } from "#/config.ts";
@@ -30,7 +29,6 @@ function rerankUrl(): string {
     }
     return `${base}/v1/services/rerank/text-rerank/text-rerank`;
   }
-  // Accept bases with or without a version segment; only append /v1 when missing.
   if (!VERSION_SEG.test(base)) {
     base += "/v1";
   }
@@ -39,7 +37,6 @@ function rerankUrl(): string {
 
 const resultItemSchema = z.object({
   index: z.number(),
-  // Accept string scores by coercing them to numbers.
   relevance_score: z.union([
     z.number(),
     z.string().transform((s) => Number(s)),
@@ -77,7 +74,6 @@ async function post(
       }
       lastResponse = resp;
     } catch (error) {
-      // Connection-level flakes are transient exactly like 429/5xx.
       lastError = error;
       if (i >= RETRIES) {
         throw error;
@@ -125,9 +121,6 @@ export async function rerank(
     );
   }
   const data = rerankResponseSchema.parse(await resp.json());
-  // A 200 without any results list is an upstream/gateway shape failure, not "no evidence":
-  // throw loudly so the retry paths and the tool audit see the real error instead of
-  // hybrid_rerank silently returning nothing.
   const results = data.results ?? data.output?.results;
   if (results === undefined) {
     throw new Error(

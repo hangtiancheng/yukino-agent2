@@ -1,4 +1,3 @@
-// All prompt assets. Content is product behavior; code comments are English.
 import {
   ChatPromptTemplate,
   MessagesPlaceholder,

@@ -1,6 +1,3 @@
-// Unified tool execution engine: the single channel for every tool call.
-// Pipeline: lookup -> JSON Schema validation -> permission gate -> execute (timeout/retry)
-// -> triage -> format + audit. Errors are fed back to the model as tool messages.
 import { ToolMessage } from "@langchain/core/messages";
 import { Ajv } from "ajv";
 import type { ErrorObject, ValidateFunction } from "ajv";
@@ -31,7 +28,7 @@ function isTransient(error: unknown): boolean {
     return true;
   }
   if (error instanceof TypeError) {
-    return true; // fetch/network failures surface as TypeError
+    return true;
   }
   return error instanceof Error && error.name === "AbortError";
 }
@@ -73,7 +70,6 @@ export function validateArgs(
   spec: ToolSpec,
   args: Record<string, unknown>,
 ): string | null {
-  // Validate the model-provided args against the visible JSON Schema.
   let validate = validators.get(spec);
   if (validate === undefined) {
     validate = ajv.compile(spec.jsonSchema);
@@ -123,7 +119,7 @@ function formatContent(spec: ToolSpec, result: unknown): string {
   if (typeof value === "string") {
     const parsed = tryParseJson(value);
     if (!parsed.ok) {
-      return value; // plain-text result passes through
+      return value;
     }
     value = parsed.value;
   }
@@ -141,7 +137,6 @@ function formatContent(spec: ToolSpec, result: unknown): string {
 }
 
 function capTokens(content: string): string {
-  // Cap what is fed back to the model; the audit keeps only a summary anyway.
   const limit = memory.tokensToChars(settings.toolResultMaxTokens);
   if (content.length <= limit) {
     return content;
@@ -342,7 +337,6 @@ export async function executeToolCall(
     return run;
   }
 
-  // Write operations need the confirmation token issued after an interrupt.
   if (spec.permission === "write" && options.confirmed !== true) {
     const note =
       options.denyNote ??
@@ -367,7 +361,6 @@ export async function executeToolCall(
     return run;
   }
 
-  // Injected args are added after validation: they are not in the visible schema.
   if (spec.injectConversation) {
     args.conversation_id = conversationId;
   }
@@ -383,9 +376,6 @@ export async function executeToolCall(
   let attempt = 0;
   for (;;) {
     try {
-      // Every call gets a timeout, writes included: a stalled write surfaces as status
-      // "timeout" instead of hanging the whole turn. Writes keep retries=0 above, never a
-      // timeout exemption.
       const result = await withTimeout(
         Promise.resolve(spec.invoke(args)),
         toolTimeout,
@@ -427,8 +417,6 @@ export async function executeToolCall(
         : error instanceof Error
           ? error.name
           : "Error";
-      // Triage wording: exhausted transient failures ask for a retry, business/unknown
-      // failures forbid fabricating a result.
       const content =
         isTimeout || isTransientExhausted
           ? `Tool temporarily unavailable: ${label}; try again later or tell the user honestly.`
@@ -437,8 +425,6 @@ export async function executeToolCall(
       if (!isTimeout && !isTransientExhausted) {
         log.error({ err: error, tool: name }, "tool execution failed");
       }
-      // The audit keeps the real reason, not just the error class: type name for
-      // timeout/exhausted-transient, "Type: message" otherwise.
       const auditError =
         isTimeout || isTransientExhausted
           ? label

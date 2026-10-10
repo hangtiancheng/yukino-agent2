@@ -1,4 +1,3 @@
-// Admin home aggregation: one card per module. A failing dependency only spoils its own card.
 import { Hono } from "hono";
 
 import * as kb from "./kb.ts";

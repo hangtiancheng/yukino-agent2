@@ -1,6 +1,3 @@
-// workflow red-line smoke: does StateGraph + a checkpointer + multi-mode streaming work on the current
-// langgraph version, and what do the streamed chunk shapes look like? Requires chat upstream.
-// Run: node scripts/smoke-langgraph.ts
 import { BaseMessage, HumanMessage } from "@langchain/core/messages";
 import {
   Annotation,
@@ -23,8 +20,6 @@ const S = Annotation.Root({
 });
 type SState = typeof S.State;
 
-// Same chunk-shape schemas the runtime uses (src/graph/runtime.ts): the langgraph stream types are
-// loose, so validate at the boundary instead of casting.
 const streamTupleSchema = z.tuple([z.string(), z.unknown()]);
 const messagesChunkSchema = z.tuple([
   z.unknown(),

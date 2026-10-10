@@ -1,4 +1,3 @@
-// Mine reusable Q&A pairs from historical conversations into the staging table.
 import { z } from "zod";
 
 import { dedupe, normalizeQuestion } from "./dedup.ts";
@@ -21,7 +20,6 @@ export interface QaPair {
   answer: string;
 }
 
-// Flat parallel arrays avoid nested object arrays, which some compatible upstreams reject.
 const qaExtractionSchema = z.object({
   questions: z
     .array(z.string())
@@ -77,7 +75,6 @@ export interface MiningStats {
 }
 
 export async function mine(batchSize = 20): Promise<MiningStats> {
-  // Extract -> staging -> global dedup -> kept (human review gate before write-back).
   const sources = await loadConversationTexts();
   const batchNo = `mine-${formatStamp(new Date())}`;
   for (let start = 0; start < sources.length; start += batchSize) {

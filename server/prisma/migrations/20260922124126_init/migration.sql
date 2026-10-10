@@ -1,4 +1,3 @@
--- CreateTable
 CREATE TABLE "Conversation" (
     "id" SERIAL NOT NULL,
     "userId" TEXT NOT NULL,
@@ -12,7 +11,6 @@ CREATE TABLE "Conversation" (
     CONSTRAINT "Conversation_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "ConversationSummary" (
     "id" SERIAL NOT NULL,
     "conversationId" INTEGER NOT NULL,
@@ -25,7 +23,6 @@ CREATE TABLE "ConversationSummary" (
     CONSTRAINT "ConversationSummary_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "Message" (
     "id" SERIAL NOT NULL,
     "conversationId" INTEGER NOT NULL,
@@ -38,7 +35,6 @@ CREATE TABLE "Message" (
     CONSTRAINT "Message_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "Faq" (
     "id" SERIAL NOT NULL,
     "question" TEXT NOT NULL,
@@ -50,7 +46,6 @@ CREATE TABLE "Faq" (
     CONSTRAINT "Faq_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "Ticket" (
     "ticketNo" TEXT NOT NULL,
     "conversationId" INTEGER NOT NULL,
@@ -62,7 +57,6 @@ CREATE TABLE "Ticket" (
     CONSTRAINT "Ticket_pkey" PRIMARY KEY ("ticketNo")
 );
 
--- CreateTable
 CREATE TABLE "KnowledgeChunk" (
     "id" SERIAL NOT NULL,
     "category" TEXT NOT NULL,
@@ -83,7 +77,6 @@ CREATE TABLE "KnowledgeChunk" (
     CONSTRAINT "KnowledgeChunk_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "QaExtractionStaging" (
     "id" SERIAL NOT NULL,
     "batchNo" TEXT NOT NULL,
@@ -96,7 +89,6 @@ CREATE TABLE "QaExtractionStaging" (
     CONSTRAINT "QaExtractionStaging_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "ToolAuditLog" (
     "id" SERIAL NOT NULL,
     "conversationId" INTEGER,
@@ -115,7 +107,6 @@ CREATE TABLE "ToolAuditLog" (
     CONSTRAINT "ToolAuditLog_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "LowConfidenceQuestion" (
     "id" SERIAL NOT NULL,
     "conversationId" INTEGER,
@@ -129,7 +120,6 @@ CREATE TABLE "LowConfidenceQuestion" (
     CONSTRAINT "LowConfidenceQuestion_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "ReviewQueue" (
     "id" SERIAL NOT NULL,
     "normalizedQuestion" TEXT NOT NULL,
@@ -143,7 +133,6 @@ CREATE TABLE "ReviewQueue" (
     CONSTRAINT "ReviewQueue_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "EvalRun" (
     "id" SERIAL NOT NULL,
     "triggeredBy" TEXT NOT NULL DEFAULT 'scheduled',
@@ -154,7 +143,6 @@ CREATE TABLE "EvalRun" (
     CONSTRAINT "EvalRun_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "FaithCase" (
     "id" SERIAL NOT NULL,
     "evalId" TEXT NOT NULL,
@@ -175,7 +163,6 @@ CREATE TABLE "FaithCase" (
     CONSTRAINT "FaithCase_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "TopicClassification" (
     "id" SERIAL NOT NULL,
     "questionId" INTEGER NOT NULL,
@@ -185,44 +172,30 @@ CREATE TABLE "TopicClassification" (
     CONSTRAINT "TopicClassification_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
 CREATE INDEX "Conversation_userId_idx" ON "Conversation"("userId");
 
--- CreateIndex
 CREATE INDEX "ConversationSummary_conversationId_uptoMsgId_idx" ON "ConversationSummary"("conversationId", "uptoMsgId");
 
--- CreateIndex
 CREATE UNIQUE INDEX "ConversationSummary_conversationId_seq_key" ON "ConversationSummary"("conversationId", "seq");
 
--- CreateIndex
 CREATE INDEX "Message_conversationId_idx" ON "Message"("conversationId");
 
--- CreateIndex
 CREATE INDEX "Faq_category_idx" ON "Faq"("category");
 
--- CreateIndex
 CREATE INDEX "Ticket_conversationId_idx" ON "Ticket"("conversationId");
 
--- CreateIndex
 CREATE INDEX "LowConfidenceQuestion_conversationId_idx" ON "LowConfidenceQuestion"("conversationId");
 
--- CreateIndex
 CREATE UNIQUE INDEX "FaithCase_evalId_key" ON "FaithCase"("evalId");
 
--- CreateIndex
 CREATE UNIQUE INDEX "TopicClassification_questionId_key" ON "TopicClassification"("questionId");
 
--- AddForeignKey
 ALTER TABLE "Message" ADD CONSTRAINT "Message_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "Conversation"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "Conversation"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE "LowConfidenceQuestion" ADD CONSTRAINT "LowConfidenceQuestion_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "Conversation"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE "LowConfidenceQuestion" ADD CONSTRAINT "LowConfidenceQuestion_matchedReviewId_fkey" FOREIGN KEY ("matchedReviewId") REFERENCES "ReviewQueue"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE "TopicClassification" ADD CONSTRAINT "TopicClassification_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "LowConfidenceQuestion"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

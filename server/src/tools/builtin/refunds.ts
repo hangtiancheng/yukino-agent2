@@ -1,4 +1,3 @@
-// submit_refund: marks an order as refundable; the actual submission happens in the UI form.
 import { z } from "zod";
 
 import { ownsOrder } from "#/tools/business.ts";
@@ -32,7 +31,6 @@ register(
     handler: (args) => {
       const { order_id } = submitRefundSchema.parse(args);
       const userId = typeof args.user_id === "string" ? args.user_id : "";
-      // The write-confirmation gate confirms "should we refund", not ownership: check it here too.
       if (!ownsOrder(userId, order_id)) {
         return NOT_OWNED;
       }

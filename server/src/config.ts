@@ -1,15 +1,23 @@
-// Runtime configuration loaded from .env (if present) plus process.env.
-// Required upstream credentials are validated on server start; scripts that do not
-// touch an upstream keep working without them.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+function findPackageRoot(start: string): string {
+  let dir = start;
+  while (!fs.existsSync(path.join(dir, "package.json"))) {
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      return path.dirname(start);
+    }
+    dir = parent;
+  }
+  return dir;
+}
+
+const ROOT = findPackageRoot(path.dirname(fileURLToPath(import.meta.url)));
 const ENV_FILE = path.join(ROOT, ".env");
 
 if (fs.existsSync(ENV_FILE)) {
-  // Node >= 20.12 built-in .env loader; no external dependency needed.
   process.loadEnvFile(ENV_FILE);
 }
 
@@ -44,7 +52,6 @@ export const bool = (name: string, fallback: boolean): boolean => {
 export const settings = {
   root: ROOT,
 
-  // --- chat upstream (required at runtime) ---
   chatModel: str("CHAT_MODEL"),
   chatBaseUrl: str("CHAT_BASE_URL"),
   chatApiKey: str("CHAT_API_KEY"),
@@ -52,7 +59,6 @@ export const settings = {
   chatReasoningEffort: str("CHAT_REASONING_EFFORT"),
   chatReasoningSplit: str("CHAT_REASONING_SPLIT"),
 
-  // --- embeddings upstream (required at runtime) ---
   embedBaseUrl: str(
     "EMBED_BASE_URL",
     "https://maas.aliyuncs.com/compatible-mode/v1",
@@ -60,7 +66,6 @@ export const settings = {
   embedApiKey: str("EMBED_API_KEY"),
   embedModel: str("EMBED_MODEL", "qwen3.7-text-embedding-flash"),
 
-  // --- rerank upstream (required at runtime) ---
   rerankBaseUrl: str(
     "RERANK_BASE_URL",
     "https://maas.aliyuncs.com/compatible-mode/v1",
@@ -71,36 +76,23 @@ export const settings = {
 
   tokenBudget: num("TOKEN_BUDGET", 2000),
 
-  // --- database / checkpointer ---
   databaseUrl: str("DATABASE_URL", "postgresql://127.0.0.1:5432/yukino_agent2"),
-  // LangGraph checkpointer database (PostgreSQL). Created automatically on first start;
-  // the saver creates its own tables/migrations inside it.
   checkpointerDbUrl: str(
     "CHECKPOINTER_DB_URL",
     "postgresql://127.0.0.1:5432/yukino_agent2_checkpoints",
   ),
 
-  // --- retrieval ---
   recallTopK: num("RECALL_TOP_K", 50),
   rerankTopK: num("RERANK_TOP_K", 10),
   subquerySplit: bool("SUBQUERY_SPLIT", true),
   rerankMinScore: num("RERANK_MIN_SCORE", 0.3),
 
-  // --- milvus standalone vector store (optional) ---
-  // Empty = disabled: retrieval runs in-process over PG embeddings + BM25 text (legacy).
-  // Set to the Milvus Standalone address (e.g. http://127.0.0.1:19530) to make Milvus the
-  // authoritative vector store: dense ANN, native BM25 full-text search and hybrid RRF all
-  // run inside Milvus. See src/kb/milvus.ts.
   milvusUri: str("MILVUS_URI"),
-  // Optional auth token ("username:password" or an API key) for a secured Milvus;
-  // Standalone ships with authorization disabled, so this stays empty by default.
   milvusToken: str("MILVUS_TOKEN"),
   milvusCollection: str("MILVUS_COLLECTION", "knowledge"),
 
-  // --- graph orchestration ---
   maxAgentSteps: num("MAX_AGENT_STEPS", 6),
 
-  // --- per-purpose model slots (empty = fall back to chat) ---
   intentModel: str("INTENT_MODEL"),
   intentBaseUrl: str("INTENT_BASE_URL"),
   intentApiKey: str("INTENT_API_KEY"),
@@ -111,7 +103,6 @@ export const settings = {
   summaryBaseUrl: str("SUMMARY_BASE_URL"),
   summaryApiKey: str("SUMMARY_API_KEY"),
 
-  // --- context budget (tokens) ---
   contextWindowMaxTokens: num("CONTEXT_WINDOW_MAX_TOKENS", 0),
   modelContextWindow: num("MODEL_CONTEXT_WINDOW", 0),
   contextBudgetTurns: num("CONTEXT_BUDGET_TURNS", 20),
@@ -130,7 +121,6 @@ export const settings = {
   zhCharsPerToken: num("ZH_CHARS_PER_TOKEN", 1.2),
   enCharsPerToken: num("EN_CHARS_PER_TOKEN", 4),
 
-  // --- tools / MCP ---
   mcpLogisticsUrl: str("MCP_LOGISTICS_URL", "http://127.0.0.1:8101/mcp"),
   mcpAftersalesUrl: str("MCP_AFTERSALES_URL", "http://127.0.0.1:8102/mcp"),
   toolDefaultTimeout: num("TOOL_DEFAULT_TIMEOUT", 5.0),
@@ -138,15 +128,12 @@ export const settings = {
   toolMaxRetries: num("TOOL_MAX_RETRIES", 2),
   demoTicketDelaySeconds: num("DEMO_TICKET_DELAY_SECONDS", 0.0),
 
-  // --- observability (all three set = Langfuse enabled) ---
   langfusePublicKey: str("LANGFUSE_PUBLIC_KEY"),
   langfuseSecretKey: str("LANGFUSE_SECRET_KEY"),
   langfuseBaseUrl: str("LANGFUSE_BASE_URL"),
 
-  // --- confidence gate ---
   evidenceConfidenceThreshold: num("EVIDENCE_CONFIDENCE_THRESHOLD", 0.26),
 
-  // --- server ---
   host: str("HOST", "127.0.0.1"),
   port: num("PORT", 8000),
 };

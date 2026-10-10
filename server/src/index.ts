@@ -1,4 +1,3 @@
-// Entry point: validate runtime configuration, register builtin tools, start the server.
 import { missingRuntimeConfig, settings } from "./config.ts";
 import { childLogger } from "./logger.ts";
 import { startServer } from "./server.ts";

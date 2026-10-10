@@ -1,4 +1,3 @@
-// Conversation list + history reload (read-only).
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 

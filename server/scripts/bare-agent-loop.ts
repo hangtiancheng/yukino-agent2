@@ -1,5 +1,3 @@
-// Demystify: without any framework, hand-write the barest agent loop — see that it is just a for
-// loop with a tool manifest. Run: node scripts/bare-agent-loop.ts "Where is the logistics for order 1001"
 import {
   AIMessage,
   HumanMessage,
@@ -14,7 +12,6 @@ import * as registry from "#/tools/registry.ts";
 
 async function runAgent(query: string, maxTurns = 6): Promise<string> {
   const specs = new Map((await registry.getAllSpecs()).map((s) => [s.name, s]));
-  // Same binding shape the graph uses (src/graph/nodes.ts): OpenAI function descriptors.
   const toolDefs = [...specs.values()].map((s) => ({
     type: "function" as const,
     function: {

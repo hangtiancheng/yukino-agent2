@@ -1,4 +1,3 @@
-// Dry-run knowledge base preview: list materials and show structured chunks without writing.
 import fs from "node:fs";
 import path from "node:path";
 

@@ -23,7 +23,7 @@ interface AdminModule {
   title: string;
   page: string;
   lede: string;
-  status: string; // ok | attention | missing | error
+  status: string;
   headline: string;
   metrics: AdminMetric[];
   note: string | null;

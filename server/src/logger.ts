@@ -1,5 +1,3 @@
-// Application logger: pino with pretty console output and a plain file stream.
-// The file log is the stable tail target for graph traces (log/app.log).
 import fs from "node:fs";
 import path from "node:path";
 

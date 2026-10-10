@@ -1,7 +1,3 @@
-/** API data shapes shared across pages. Fields map one-to-one to the backend
-    response; the frontend only reads them, never computes. */
-
-/* ---------- Job runner (/api/jobs) ---------- */
 export type JobStatus = "idle" | "running" | "ok" | "failed" | "stopped";
 
 export interface JobSpec {
@@ -15,7 +11,6 @@ export interface JobSpec {
   returncode?: number | null;
 }
 
-/* ---------- Chat page (SSE frames / citations / actions / interrupts) ---------- */
 export interface Citation {
   n: number;
   section_path?: string;
@@ -43,7 +38,7 @@ export interface TicketPreview {
 }
 
 export interface InterruptFrame {
-  kind: string; // "select_order" | "confirm_ticket"
+  kind: string;
   conversation_id?: number;
   orders?: Order[];
   preview?: TicketPreview;
@@ -56,7 +51,6 @@ export interface ConversationItem {
 }
 
 export interface HistoryMessage {
-  /** "user" | "assistant" etc.; passed through verbatim by the backend */
   role: string;
   content: string;
 }

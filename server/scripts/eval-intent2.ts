@@ -53,7 +53,6 @@ async function main(): Promise<void> {
     );
   }
 
-  // Multi-turn drift: logistics -> refund -> logistics; the current turn's intent follows context.
   const hist =
     "user: Where is order 1001\nassistant: Shipped, at the Shenzhen sorting center\nuser: Then I want to return it\nassistant: Sure, let me look at the refund\n";
   const r = await classify("So where is it now", hist);

@@ -1,4 +1,3 @@
-// Hono application: middleware, API routes and the startup/shutdown lifecycle.
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -83,10 +82,6 @@ function checkContextBudget(): void {
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-// Warm up Milvus before serving: a collection load completes asynchronously server-side and
-// searches against a not-yet-ready collection answer silently empty, so probe the BM25 path
-// until a hit comes back. Best-effort — a down Milvus or an empty KB only warns; startup is
-// never blocked past the probe budget.
 async function warmupMilvus(): Promise<void> {
   if (!milvus.milvusEnabled()) {
     return;

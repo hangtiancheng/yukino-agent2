@@ -19,9 +19,6 @@ import {
 } from "~/lib/motion";
 import type { ConversationItem } from "~/lib/types";
 
-/* Conversation sidebar: fixed column on desktop, drawer on mobile.
-   List item = #id + summarized badge + preview. */
-
 function ConvList(opts: {
   items: ConversationItem[];
   current: number | null;
@@ -129,7 +126,6 @@ export class MobileDrawer extends LightElement {
   @property({ attribute: false }) onSwitch?: (id: number) => void;
   @property({ attribute: false }) onNewChat?: () => void;
 
-  /** DOM presence, lagging `open` so the exit animation can play */
   @state() private visible = false;
   private backdropRef = createRef<HTMLDivElement>();
   private panelRef = createRef<HTMLDivElement>();

@@ -1,4 +1,3 @@
-// Review queue API: list / detail / approve (write back to the knowledge base) / reject.
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 

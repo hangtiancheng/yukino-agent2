@@ -1,4 +1,3 @@
-// Vector recall acceptance: paraphrased questions should retrieve the expected content.
 import fs from "node:fs";
 import path from "node:path";
 

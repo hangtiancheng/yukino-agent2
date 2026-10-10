@@ -13,7 +13,6 @@ export default defineConfig(
   globalIgnores([
     "**/dist",
     "**/node_modules",
-    // Prisma client output; file names are dictated by `prisma generate`.
     "server/generated",
     "eslint.config.js",
   ]),
@@ -21,7 +20,6 @@ export default defineConfig(
     files: ["**/*.{ts,tsx}"],
     extends: [
       eslint.configs.recommended,
-      // tseslint.configs.recommendedTypeChecked,
       tseslint.configs.strictTypeChecked,
       tseslint.configs.stylisticTypeChecked,
       reactRefresh.configs.vite,
@@ -58,7 +56,6 @@ export default defineConfig(
       "@typescript-eslint/ban-ts-comment": "error",
       "@typescript-eslint/consistent-type-assertions": [
         "error",
-        // Runtime boundaries must use zod validation instead of type assertions.
         { assertionStyle: "never" },
       ],
       "@typescript-eslint/no-explicit-any": "error",

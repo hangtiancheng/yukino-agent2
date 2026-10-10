@@ -1,20 +1,4 @@
 #!/usr/bin/env node
-/**
- * main.js — task runner for yukino-agent2.
- *
- * Usage: node main.js <command> [extra args...]
- *
- * Two kinds of commands:
- *   - One-shot tasks run in the foreground, stream stdio and propagate the
- *     child's exit code. Extra CLI args are appended to the fixed argv, e.g.
- *     `node main.js eval-rag --skip-gen`.
- *   - Background services follow the repo convention: detached spawn with the
- *     log in log/<name>.log and the pid in data/<name>.pid, plus a readiness
- *     probe after start. `<name>-up` / `<name>-down` commands are generated
- *     from the SERVICES table, so adding a service is one table entry.
- *
- * POSIX-only (detached spawn + node_modules/.bin shims).
- */
 
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -24,49 +8,9 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const LOG_DIR = path.join(ROOT, "log");
 const DATA_DIR = path.join(ROOT, "data");
-// Daemon spawns use the .bin shim directly (it `exec`s node, so the recorded
-// pid is the real server process); foreground tasks keep `pnpm exec tsx`.
 const TSX_BIN = path.join(ROOT, "node_modules", ".bin", "tsx");
 const TSX = ["pnpm", "exec", "tsx"];
 
-/**
- * Readiness probe run right after a service is spawned.
- *
- * - `log`: poll the service log until `pattern` (plain substring) appears.
- * - `http`: poll `url` until it answers at all — any HTTP status counts as up,
- *   only connection-level failures keep it waiting.
- *
- * A probe timeout fails the start (exit code 1) unless `required: false`,
- * which downgrades it to a warning.
- *
- * @typedef {Object} ReadyCheck
- * @property {"log" | "http"} kind - Probe type.
- * @property {string} [pattern] - Substring to wait for (`kind: "log"` only).
- * @property {string} [url] - URL to probe (`kind: "http"` only).
- * @property {number} timeoutMs - Polling budget before giving up.
- * @property {boolean} [required] - `false` turns a timeout into a warning (default: required).
- */
-
-/**
- * A long-running background service managed with the repo's pid/log-file convention.
- *
- * @typedef {Object} Service
- * @property {string} description - Human name used in help output.
- * @property {string[]} cmd - argv spawned detached from the repo root.
- * @property {string[]} [dirs] - Extra directories (relative to the repo root) to create before start.
- * @property {ReadyCheck} [ready] - Readiness probe; omit when there is nothing to check.
- * @property {string} startedMsg - Success line printed once the probe passes.
- */
-
-/**
- * A CLI command exposed by this runner.
- *
- * @typedef {Object} Command
- * @property {string} description - One-line help text.
- * @property {(extraArgs: string[]) => void | Promise<void>} run - Handler; extra CLI args are passed through.
- */
-
-/** @type {Record<string, Service>} */
 const SERVICES = {
   "mcp-logistics": {
     description: "the logistics MCP server (:8101)",
@@ -94,19 +38,8 @@ const SERVICES = {
   },
 };
 
-/**
- * Resolve a promise after `ms` milliseconds.
- * @param {number} ms
- * @returns {Promise<void>}
- */
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/**
- * Run a foreground task, streaming stdio, and mirror the child's exit code
- * into `process.exitCode`.
- * @param {string[]} argv - Command and arguments.
- * @returns {void}
- */
 function runForeground(argv) {
   const result = spawnSync(argv[0], argv.slice(1), {
     cwd: ROOT,
@@ -122,17 +55,10 @@ function runForeground(argv) {
   if (typeof result.status === "number") {
     process.exitCode = result.status;
   } else if (result.signal) {
-    // Killed by a signal (e.g. Ctrl-C on `dev`) — report failure.
     process.exitCode = 1;
   }
 }
 
-/**
- * Build a one-shot foreground command from a fixed argv; extra CLI args are appended.
- * @param {string} description - Help text.
- * @param {string[]} argv - Fixed command and arguments.
- * @returns {Command}
- */
 const task = (description, argv) => ({
   description,
   run: (extraArgs) => {
@@ -140,15 +66,6 @@ const task = (description, argv) => ({
   },
 });
 
-/**
- * Like `task`, but injects `flag value` unless the caller already passed `flag`
- * (a default value for an optional flag).
- * @param {string} description - Help text.
- * @param {string[]} argv - Fixed command and arguments.
- * @param {string} flag - Flag to default, e.g. "--days".
- * @param {string} value - Default value for the flag.
- * @returns {Command}
- */
 const taskWithDefault = (description, argv, flag, value) => ({
   description,
   run: (extraArgs) => {
@@ -157,11 +74,6 @@ const taskWithDefault = (description, argv, flag, value) => ({
   },
 });
 
-/**
- * Check whether a process id is alive.
- * @param {number} pid
- * @returns {boolean}
- */
 function isAlive(pid) {
   try {
     process.kill(pid, 0);
@@ -171,13 +83,6 @@ function isAlive(pid) {
   }
 }
 
-/**
- * Poll a log file until it contains `pattern` or the budget runs out.
- * @param {string} file - Absolute log file path.
- * @param {string} pattern - Plain substring to look for.
- * @param {number} timeoutMs - Polling budget.
- * @returns {Promise<boolean>}
- */
 async function waitForLog(file, pattern, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -185,20 +90,12 @@ async function waitForLog(file, pattern, timeoutMs) {
       if (fs.readFileSync(file, "utf8").includes(pattern)) {
         return true;
       }
-    } catch {
-      // Log file not created yet — keep polling.
-    }
+    } catch {}
     await sleep(200);
   }
   return false;
 }
 
-/**
- * Poll an HTTP endpoint until it answers (any status counts as up).
- * @param {string} url - Absolute URL to probe.
- * @param {number} timeoutMs - Polling budget.
- * @returns {Promise<boolean>}
- */
 async function waitForHttp(url, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -212,31 +109,15 @@ async function waitForHttp(url, timeoutMs) {
   return false;
 }
 
-/**
- * Print the last `count` lines of a file to stderr (best effort).
- * @param {string} file - Absolute file path.
- * @param {number} count - Number of trailing lines to print.
- * @returns {void}
- */
 function tail(file, count) {
   try {
     const lines = fs.readFileSync(file, "utf8").split("\n").filter(Boolean);
     for (const line of lines.slice(-count)) {
       console.error(line);
     }
-  } catch {
-    // No log yet — nothing to show.
-  }
+  } catch {}
 }
 
-/**
- * Start a service detached: log to log/<name>.log (truncated), pid to
- * data/<name>.pid, then run its readiness probe. A failed probe sets exit
- * code 1 and shows the log tail.
- * @param {string} name - Service key from SERVICES.
- * @param {Service} service - Service definition.
- * @returns {Promise<void>}
- */
 async function daemonUp(name, service) {
   fs.mkdirSync(LOG_DIR, { recursive: true });
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -246,11 +127,7 @@ async function daemonUp(name, service) {
 
   const logFile = path.join(LOG_DIR, `${name}.log`);
   const fd = fs.openSync(logFile, "w");
-  // Errors captured in an array: control-flow narrowing cannot see assignments
-  // made inside the async 'error' callback, so a plain `let` would type as never.
-  /** @type {Error[]} */
   const spawnErrors = [];
-  /** @type {import("node:child_process").ChildProcess} */
   let child;
   try {
     child = spawn(service.cmd[0], service.cmd.slice(1), {
@@ -265,7 +142,7 @@ async function daemonUp(name, service) {
     spawnErrors.push(error);
   });
   if (child.pid === undefined) {
-    await sleep(100); // let the 'error' event arrive
+    await sleep(100);
     const reason = spawnErrors.length > 0 ? ` (${spawnErrors[0].message})` : "";
     console.error(
       `${name}: failed to spawn: ${service.cmd.join(" ")}${reason}`,
@@ -303,11 +180,6 @@ async function daemonUp(name, service) {
   process.exitCode = 1;
 }
 
-/**
- * Stop a service by pid file (SIGTERM, best effort), then remove the pid file.
- * @param {string} name - Service key from SERVICES.
- * @returns {void}
- */
 function daemonDown(name) {
   const pidFile = path.join(DATA_DIR, `${name}.pid`);
   try {
@@ -315,26 +187,16 @@ function daemonDown(name) {
     if (Number.isInteger(pid) && pid > 0 && isAlive(pid)) {
       process.kill(pid, "SIGTERM");
     }
-  } catch {
-    // No pid file or already gone — nothing to stop.
-  }
+  } catch {}
   fs.rmSync(pidFile, { force: true });
   console.log(`${name} stopped`);
 }
 
-/**
- * Start both MCP servers (logistics + after-sales).
- * @returns {Promise<void>}
- */
 async function mcpUp() {
   await daemonUp("mcp-logistics", SERVICES["mcp-logistics"]);
   await daemonUp("mcp-aftersales", SERVICES["mcp-aftersales"]);
 }
 
-// --- Milvus Standalone lifecycle (RPM/DEB systemd install, or docker compose fallback) ---
-// Milvus is a system-level service, not a repo daemon: no pid/log files here, the unit or
-// docker compose owns the process. The Node server talks to it directly over gRPC
-// (src/kb/milvus.ts) once MILVUS_URI is set.
 const MILVUS_COMPOSE_DIR = path.join(ROOT, "deploy", "milvus");
 const MILVUS_HEALTHZ_URL = "http://127.0.0.1:9091/healthz";
 const MILVUS_INSTALL_HINT = [
@@ -346,11 +208,6 @@ const MILVUS_INSTALL_HINT = [
   `     ${path.relative(ROOT, MILVUS_COMPOSE_DIR)}/docker-compose.yml (etcd + MinIO + standalone).`,
 ].join("\n");
 
-/**
- * Detect how Milvus Standalone is installed: the RPM/DEB package registers a systemd unit
- * (preferred), otherwise fall back to the vendored docker compose file when docker exists.
- * @returns {"systemd" | "docker" | null}
- */
 function milvusBackend() {
   const unit = spawnSync("systemctl", ["cat", "milvus.service"], {
     stdio: "ignore",
@@ -370,23 +227,11 @@ function milvusBackend() {
   return null;
 }
 
-/**
- * systemctl needs root; prefix passwordless sudo when running as a regular user.
- * @param {string[]} args - systemctl arguments.
- * @returns {string[]} argv for spawnSync.
- */
 function systemctlArgv(...args) {
   const isRoot = typeof process.getuid === "function" && process.getuid() === 0;
   return isRoot ? ["systemctl", args] : ["sudo", ["-n", "systemctl", ...args]];
 }
 
-/**
- * Poll the Standalone health endpoint until it answers 200 (unlike waitForHttp, a non-200
- * probe means "still starting" and keeps waiting).
- * @param {string} url - Absolute healthz URL.
- * @param {number} timeoutMs - Polling budget.
- * @returns {Promise<boolean>}
- */
 async function waitForHealthz(url, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -395,20 +240,12 @@ async function waitForHealthz(url, timeoutMs) {
       if (res.status === 200) {
         return true;
       }
-    } catch {
-      // Not answering yet — keep polling.
-    }
+    } catch {}
     await sleep(1_000);
   }
   return false;
 }
 
-/**
- * Run a command, streaming stdio, and report a failure with context.
- * @param {string[]} argv - Command and arguments.
- * @param {string} failureMsg - Printed when the command exits non-zero.
- * @returns {boolean} true when the command succeeded.
- */
 function runChecked(argv, failureMsg) {
   const result = spawnSync(argv[0], argv.slice(1), {
     cwd: ROOT,
@@ -424,10 +261,6 @@ function runChecked(argv, failureMsg) {
   return true;
 }
 
-/**
- * Start Milvus Standalone and wait until it is healthy.
- * @returns {Promise<void>}
- */
 async function milvusUp() {
   if (await waitForHealthz(MILVUS_HEALTHZ_URL, 3_000)) {
     console.log(
@@ -447,8 +280,6 @@ async function milvusUp() {
     started = runChecked([cmd, ...args], "Failed to start milvus.service");
   } else {
     console.log("Starting Milvus via docker compose (deploy/milvus)...");
-    // -f keeps the project directory at deploy/milvus, so the bind-mounted volumes land
-    // in deploy/milvus/volumes/ (gitignored).
     started = runChecked(
       [
         "docker",
@@ -484,10 +315,6 @@ async function milvusUp() {
   );
 }
 
-/**
- * Stop Milvus Standalone.
- * @returns {Promise<void>}
- */
 async function milvusDown() {
   const backend = milvusBackend();
   if (backend === null) {
@@ -522,22 +349,15 @@ async function milvusDown() {
   console.log("Milvus Standalone stopped");
 }
 
-// --- Langfuse observability stack lifecycle (docker compose, vendored deploy/langfuse) ---
 const LANGFUSE_COMPOSE = path.join(
   ROOT,
   "deploy",
   "langfuse",
   "docker-compose.yml",
 );
-// -p keeps this stack in its own compose project so its minio cannot collide with the
-// Milvus one (deploy/milvus).
 const LANGFUSE_PROJECT = "yukino-langfuse";
 const LANGFUSE_HEALTH_URL = "http://localhost:3000/api/public/health";
 
-/**
- * Start the Langfuse stack and wait until the public health endpoint answers 200.
- * @returns {Promise<void>}
- */
 async function langfuseUp() {
   if (await waitForHealthz(LANGFUSE_HEALTH_URL, 3_000)) {
     console.log("Langfuse already running: http://localhost:3000");
@@ -590,10 +410,6 @@ async function langfuseUp() {
   console.log("  LANGFUSE_BASE_URL=http://localhost:3000");
 }
 
-/**
- * Stop the Langfuse stack (volumes are kept).
- * @returns {Promise<void>}
- */
 async function langfuseDown() {
   const result = spawnSync(
     "docker",
@@ -608,7 +424,6 @@ async function langfuseDown() {
   console.log("Langfuse stopped");
 }
 
-/** @type {Record<string, Command>} */
 const COMMANDS = {
   help: {
     description: "Show this help",
@@ -818,7 +633,6 @@ const COMMANDS = {
   },
 };
 
-// Generate <name>-up / <name>-down for every entry in SERVICES.
 for (const [name, service] of Object.entries(SERVICES)) {
   COMMANDS[`${name}-up`] = {
     description: `Start ${service.description}`,
@@ -832,10 +646,6 @@ for (const [name, service] of Object.entries(SERVICES)) {
   };
 }
 
-/**
- * Print the command list.
- * @returns {void}
- */
 function printHelp() {
   const names = Object.keys(COMMANDS).sort();
   const width = Math.max(...names.map((name) => name.length)) + 2;
@@ -846,10 +656,6 @@ function printHelp() {
   }
 }
 
-/**
- * CLI entry: dispatch argv to a command; no args prints help.
- * @returns {Promise<void>}
- */
 async function main() {
   const [name, ...extraArgs] = process.argv.slice(2);
   if (name === undefined || name === "--help" || name === "-h") {

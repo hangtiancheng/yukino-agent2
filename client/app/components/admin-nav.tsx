@@ -7,12 +7,6 @@ import { Icon } from "~/lib/icons";
 import { LightElement } from "~/lib/light-element";
 import { enterOnce, springTransition } from "~/lib/motion";
 
-/* Admin navigation shell: a single nav bar shared by every admin page (from the
-   original admin.js). Entries keep each module's own path; the nav only gathers
-   them in one place and does not rewrite any routes.
-   The active pill springs between links; the previous position is cached at
-   module level so the pill visibly slides across page-to-page remounts. */
-
 interface NavModule {
   href: string;
   label: string;
@@ -27,7 +21,6 @@ const NAV: NavModule[] = [
   { href: "/observability", label: "Observability" },
 ];
 
-/** Which module the current page belongs to: exact match first, then by prefix. */
 function moduleOf(active: string): NavModule | undefined {
   return (
     NAV.find((m) => m.href === active) ??
@@ -51,7 +44,6 @@ export class AdminNav extends LightElement {
   override connectedCallback(): void {
     super.connectedCallback();
     enterOnce(this, { y: -8, duration: 0.35 });
-    // Re-seat the indicators when layout shifts (font load, resize)
     this.ro = new ResizeObserver(() => {
       this.moveIndicators(true);
     });
@@ -113,7 +105,7 @@ export class AdminNav extends LightElement {
                 `a[href="${CSS.escape(lastSubHref)}"]`,
               )
             : null;
-        const xOf = (el: HTMLAnchorElement) => el.offsetLeft + 14; // inset-x-3.5
+        const xOf = (el: HTMLAnchorElement) => el.offsetLeft + 14;
         const wOf = (el: HTMLAnchorElement) => el.offsetWidth - 28;
         const y = link.offsetTop + link.offsetHeight - 2;
         line.style.top = `${String(y)}px`;

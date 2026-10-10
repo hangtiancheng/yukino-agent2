@@ -24,10 +24,6 @@ import { Icon } from "~/lib/icons";
 import { DataLoaderElement } from "~/lib/page-element";
 import type { JobSpec } from "~/lib/types";
 
-/* Knowledge Base entry: paste a document and it goes straight into the KB —
-   chunking → dual-write to the database and the vector store → search self-test on the spot.
-   The page reads the output of /api/kb/overview; re-runs go through the /api/jobs runner. */
-
 interface KbChunkStats {
   total: number | null;
   pending: number | null;
@@ -169,8 +165,6 @@ export class KbPage extends DataLoaderElement<KbOverview> {
   @state() private hitStrategy = "";
   @state() private searching = false;
 
-  /* Uncontrolled text inputs (see chat.tsx for why): state mirrors the DOM for
-     logic, programmatic edits go through the refs. */
   private textRef = createRef<HTMLTextAreaElement>();
   private qRef = createRef<HTMLInputElement>();
 
@@ -262,7 +256,6 @@ export class KbPage extends DataLoaderElement<KbOverview> {
     }
   }
 
-  /** Approve / reject: the only way mined knowledge enters the KB — writes knowledge_chunks on click */
   private async reviewAction(
     kind: "approve" | "reject",
     id: number,
@@ -277,7 +270,7 @@ export class KbPage extends DataLoaderElement<KbOverview> {
           ? "Approved " + String(r.approved ?? 0) + " rows into the KB"
           : "Rejected " + String(r.rejected ?? 0) + " rows",
       );
-      await this.loadStaging(); // Refetch: this row moves from pending review to approved/rejected
+      await this.loadStaging();
       void this.reload();
     } catch (e) {
       toast(
@@ -367,7 +360,6 @@ export class KbPage extends DataLoaderElement<KbOverview> {
         active="/kb"
         actions={this.refreshBtn()}
       >
-        {/* Top gate bar */}
         <GateBar>
           <Stat label="Chunks (DB)" value={c.total ?? "—"} />
           <Stat
@@ -410,7 +402,6 @@ export class KbPage extends DataLoaderElement<KbOverview> {
           catch up.
         </Tip>
 
-        {/* ① Manual entry */}
         <Panel
           title="① Manual entry"
           pill={<Pill tone="info">Paste body text here</Pill>}
@@ -587,7 +578,6 @@ export class KbPage extends DataLoaderElement<KbOverview> {
           ) : null}
         </Panel>
 
-        {/* ② Build materials */}
         <Panel
           title="② Build materials"
           pill={
@@ -665,7 +655,6 @@ export class KbPage extends DataLoaderElement<KbOverview> {
           ></job-row>
         </Panel>
 
-        {/* ③ Conversation mining */}
         <Panel
           title="③ Conversation mining"
           pill={
@@ -808,7 +797,6 @@ export class KbPage extends DataLoaderElement<KbOverview> {
           ) : null}
         </Panel>
 
-        {/* ④ Vectorization & dual-write */}
         <Panel
           title="④ Vectorization & dual-write"
           pill={
@@ -865,7 +853,6 @@ export class KbPage extends DataLoaderElement<KbOverview> {
           ></job-row>
         </Panel>
 
-        {/* ⑤ Search self-test */}
         <Panel
           title="⑤ Search self-test"
           pill={<Pill tone="info">Ask it another way</Pill>}
@@ -1009,7 +996,6 @@ export class KbPage extends DataLoaderElement<KbOverview> {
           ) : null}
         </Panel>
 
-        {/* ⑥ Recently ingested */}
         <Panel
           title="⑥ Recently ingested"
           lede="The latest 12 chunks in descending id order — see what ingested content looks like and how far each status has progressed."

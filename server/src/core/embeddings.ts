@@ -1,4 +1,3 @@
-// Direct connection to the embeddings upstream (OpenAI-compatible).
 import OpenAI from "openai";
 
 import { settings } from "#/config.ts";
@@ -6,7 +5,6 @@ import { settings } from "#/config.ts";
 let client: OpenAI | null = null;
 
 function getClient(): OpenAI {
-  // Process-wide singleton: reuse one HTTP connection pool for all embed calls.
   if (client === null) {
     client = new OpenAI({
       baseURL: settings.embedBaseUrl,

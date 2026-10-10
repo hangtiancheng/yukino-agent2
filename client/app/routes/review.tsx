@@ -10,17 +10,12 @@ import { EASE_STANDARD, enterOnce } from "~/lib/motion";
 import { DataLoaderElement } from "~/lib/page-element";
 import { navigate } from "~/lib/router";
 
-/* Flywheel review queue: unanswerable questions → normalize & dedupe → human
-   review → write back to the Knowledge Base. Status tabs ride the URL
-   (?status=) so links are shareable; details (merged originals + recall
-   snapshots) are fetched only when expanded. */
-
 interface ReviewItem {
   id: number;
   normalized_question: string;
   ai_suggested_answer: string | null;
   occurrence_count: number;
-  review_status: string; // Backend values: pending_review | approved | rejected
+  review_status: string;
   created_at: string | null;
 }
 
@@ -36,7 +31,6 @@ interface ReviewRaw {
   source: string;
   reason?: string | null;
   created_at: string | null;
-  /** Three states: null = retrieval never ran; [] = ran with zero hits (a strong signal of a real knowledge gap); list = had recalls */
   retrieved_chunks: SnapshotChunk[] | null;
 }
 
@@ -66,7 +60,6 @@ const ST_CLS: Record<string, string> = {
   rejected: "bg-error text-on-error",
 };
 
-// Display labels for backend status values (keys are contract strings)
 const ST_LABEL: Record<string, string> = {
   pending_review: "Pending",
   approved: "Approved",
@@ -123,10 +116,6 @@ function Snapshots({ chunks }: { chunks: SnapshotChunk[] | null }) {
   );
 }
 
-/* ---------- Approve dialog ---------- */
-
-/** Approve dialog: the approved answer is prefilled with the AI suggestion; a human
-    reviews it before it is written back to the Knowledge Base. */
 @customElement("approve-dialog")
 export class ApproveDialog extends ModalShell {
   @property({ attribute: false }) item: ReviewItem | null = null;
@@ -148,7 +137,6 @@ export class ApproveDialog extends ModalShell {
       void this.updateComplete.then(() => {
         const el = this.textareaRef.value;
         if (el) {
-          // Uncontrolled textarea (see chat.tsx): seed the prefilled suggestion via the ref
           el.value = this.answer;
           el.focus();
         }
@@ -217,11 +205,8 @@ export class ApproveDialog extends ModalShell {
   }
 }
 
-/* ---------- Page ---------- */
-
 @customElement("review-page")
 export class ReviewPage extends DataLoaderElement<Queue> {
-  /** Current location.search, fed in by the route render callback */
   @property() search = "";
 
   @state() private openId: number | null = null;
@@ -256,7 +241,6 @@ export class ReviewPage extends DataLoaderElement<Queue> {
 
   private async toggleDetail(id: number): Promise<void> {
     if (this.openId === id) {
-      // Collapse: animate the height down, then unmount
       const el = this.detailRef.value;
       if (el) {
         await animate(
@@ -277,7 +261,6 @@ export class ReviewPage extends DataLoaderElement<Queue> {
           { height: [0, "auto"], opacity: [0, 1] },
           { duration: 0.2, ease: EASE_STANDARD },
         ).then(() => {
-          // Let the box size naturally again — the detail fetch below changes its height
           el.style.height = "";
         });
       }

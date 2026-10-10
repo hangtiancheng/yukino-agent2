@@ -1,4 +1,3 @@
-// Langfuse observability: OTEL-based tracing that degrades to a no-op when unconfigured.
 import { CallbackHandler } from "@langfuse/langchain";
 import { LangfuseSpanProcessor } from "@langfuse/otel";
 import {
@@ -84,7 +83,6 @@ export interface TurnRecord {
 }
 
 export function recordTurn(record: TurnRecord): void {
-  // Observability is an enhancement: every failure is swallowed.
   if (!langfuseEnabled()) {
     return;
   }
@@ -125,11 +123,6 @@ export interface LangfuseConfig {
 }
 
 export function tagIntent(intent: string, confidence: number): void {
-  // Write the intent into the LIVE turn trace's metadata + tags (the hook the cost
-  // ledger groups by): create a small event observation inside the propagated-attributes
-  // context — updating an already-ended span would be silently dropped by OTel, a fresh
-  // event is always live and lifts the trace-level attributes with it. Any failure degrades
-  // silently; observability never breaks the business path.
   if (!langfuseEnabled()) {
     return;
   }

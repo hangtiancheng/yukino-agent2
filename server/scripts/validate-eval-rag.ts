@@ -1,20 +1,3 @@
-// Eval-set self-check (rag): the 300 hand-written ground-truth rows are guarded by this script,
-// not by eyeballing.
-//
-// Checks five things:
-//   1) id and query are unique, and the five buckets have equal counts;
-//   2) each answerable bucket's expect_section hits at least one KB section (0 hits = always a miss);
-//   3) expect_points must appear verbatim (whitespace-stripped) in the target section body — evidence
-//      coverage is a mechanical substring match, so a point written differently from the KB never scores;
-//      the cross-document bucket (E_multi) uses expect_sections_all: every group must hit a section,
-//      and points are looked up in the union of those groups;
-//   4) the D bucket must carry no ground truth, and should_refuse must agree with the bucket;
-//   5) warn on questions whose expect_section is judged too loosely (one keyword hits many sections,
-//      inflating recall).
-//
-// KB text comes from the knowledge_chunks rows (the same rows retrieval uses): dense vectors
-// may live in Milvus Standalone (src/kb/milvus.ts), but text lookups stay on the relational
-// rows in both modes. Run: node scripts/validate-eval-rag.ts
 import fs from "node:fs";
 import path from "node:path";
 
@@ -31,7 +14,7 @@ const GRADED_BUCKETS = new Set([
   "C_colloquial",
   "E_multi",
 ]);
-const LOOSE_LIMIT = 4; // warn when one expect_section hits more sections than this
+const LOOSE_LIMIT = 4;
 
 const rowSchema = z.object({
   id: z.string(),

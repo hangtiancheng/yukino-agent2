@@ -1,8 +1,5 @@
-// Coreference resolution labeled evaluation: multi-turn completion + passthrough when already
-// complete. Requires chat upstream. Run: node scripts/eval-coref.ts
 import { resolve } from "#/core/coref.ts";
 
-// (history, query, expectation: "rewrite" fills in the entity / "passthrough" leaves it alone)
 const CASES: [string, string, "rewrite" | "passthrough"][] = [
   [
     "user: When will the Bluetooth earphones arrive\nassistant: Expected to be delivered tomorrow",

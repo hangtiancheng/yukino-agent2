@@ -1,5 +1,3 @@
-// Pre-generation evidence self-check. A model failure is treated as "insufficient"
-// (never as "sufficient"), because the gate exists to stop unsupported answers.
 import { z } from "zod";
 
 import { structured } from "./llm.ts";

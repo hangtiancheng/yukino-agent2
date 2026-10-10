@@ -1,5 +1,3 @@
-// Four-strategy RAG evaluation (vector / bm25 / hybrid / hybrid+rerank) over the rag dataset.
-// Deterministic retrieval metrics always run; the generation segment can be skipped with --skip-gen.
 import fs from "node:fs";
 import path from "node:path";
 

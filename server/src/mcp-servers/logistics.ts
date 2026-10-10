@@ -1,5 +1,3 @@
-// Logistics MCP server (mock data, separate process, Streamable HTTP on :8101).
-// MOCK_DELAY_SECONDS>0 injects latency to exercise client timeouts and audits.
 import { serve } from "@hono/node-server";
 import { McpServer, createMcpHandler } from "@modelcontextprotocol/server";
 import { Hono } from "hono";
@@ -63,13 +61,13 @@ server.registerTool(
     const city = CITIES[Math.floor(rng() * CITIES.length)];
     const payload = {
       tracking_no,
-      status_code: code, // internal enum; translated on the client side
+      status_code: code,
       current_city: city,
       trace: [
         `${city} sorting center: dispatched`,
         `Internal status code: ${code}`,
       ],
-      carrier_code: "SF-EXP-01", // internal carrier code; dropped by the client formatter
+      carrier_code: "SF-EXP-01",
     };
     return {
       content: [{ type: "text" as const, text: JSON.stringify(payload) }],

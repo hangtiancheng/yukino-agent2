@@ -1,4 +1,3 @@
-// Hybrid retrieval pipeline: clause split -> dense/BM25 -> rerank -> head/tail arrangement.
 import { embedQuery } from "./embeddings.ts";
 import { rerank } from "./rerank.ts";
 
@@ -10,7 +9,6 @@ const CLAUSE_RE = /[,，;；?？。]/;
 const MIN_CLAUSE = 4;
 
 export function splitClauses(query: string): string[] {
-  // Split multi-intent questions on punctuation; a single clause returns the original query.
   const parts = String(query ?? "")
     .split(CLAUSE_RE)
     .map((p) => p.trim())
@@ -35,8 +33,6 @@ function mergeRoundRobin(lists: KnowledgeHit[][]): KnowledgeHit[] {
         continue;
       }
       seenId.add(key);
-      // Missing/empty section paths are tracked too: only the first hit without a
-      // section stays in the main order, later ones move to the tail.
       const sec = hit.section_path || "";
       if (seenSec.has(sec)) {
         tail.push(hit);
@@ -81,9 +77,6 @@ export async function searchKnowledge(
   if (split && settings.subquerySplit) {
     const clauses = splitClauses(query);
     if (clauses.length >= 2) {
-      // Sequential on purpose: each clause search is a burst of embed + rerank calls and
-      // the rerank upstream is rate-limited per second, so awaiting the clauses one by one
-      // gives natural pacing.
       const per: KnowledgeHit[][] = [];
       for (const clause of clauses) {
         per.push(

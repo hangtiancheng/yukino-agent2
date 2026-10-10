@@ -1,4 +1,3 @@
-// Request schemas shared by the HTTP routes.
 import { z } from "zod";
 
 export const chatRequestSchema = z.object({
@@ -63,7 +62,6 @@ export const afterSalesTicketSchema = z.object({
 });
 export type AfterSalesTicket = z.infer<typeof afterSalesTicketSchema>;
 
-// The model sometimes expresses "no order id" as a placeholder string instead of omitting it.
 export function normalizeOrderId(value: string | null): string | null {
   if (value === null) {
     return null;

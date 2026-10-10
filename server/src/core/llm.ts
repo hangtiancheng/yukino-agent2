@@ -1,7 +1,3 @@
-// Chat model factory and structured-output helper.
-//
-// Three upstreams (chat / intent / summary) are configured as independent slots: an
-// empty slot setting falls back to the chat group, so a single upstream needs no extra config.
 import type { BaseLanguageModelInput } from "@langchain/core/language_models/base";
 import { RunnableLambda } from "@langchain/core/runnables";
 import type { Runnable } from "@langchain/core/runnables";
@@ -53,12 +49,6 @@ interface ThinkingOptions {
 }
 
 function thinkingKwargs(): ThinkingOptions {
-  // thinking / reasoning_split are not part of the OpenAI protocol and go through modelKwargs.
-  // reasoning_effort IS a standard OpenAI field, but the JS ChatOpenAI constructor ignores it
-  // (its reasoningEffort call-option is gated to OpenAI reasoning models and never matches the
-  // DeepSeek/MiniMax upstreams configured here), so it also goes through modelKwargs: that
-  // merges verbatim into the request body. Unsupported upstreams silently ignore all of
-  // them, so no provider branching here.
   const extra: Record<string, unknown> = {};
   if (settings.chatThinking) {
     extra.thinking = { type: settings.chatThinking };
@@ -76,7 +66,6 @@ function thinkingKwargs(): ThinkingOptions {
     if (effort.success) {
       extra.reasoning_effort = effort.data;
     } else {
-      // A typo must not silently do nothing: say so and start with the upstream default.
       log.warn(
         { value: settings.chatReasoningEffort },
         "CHAT_REASONING_EFFORT is not one of none/minimal/low/medium/high/xhigh/max; ignoring",
@@ -126,10 +115,6 @@ export function getChatModel(options: GetModelOptions = {}): ChatOpenAI {
   });
 }
 
-// Structured output only goes through function calling. Non-streaming
-// OpenAI-compatible proxies corrupt tool_call arguments; json_schema parses the
-// message body and can be derailed by extra reasoning text. Failures retry once,
-// then throw so the call site can fall back to a safe default.
 const NO_STREAM_TOOLCALL_FAMILIES = ["minimax"];
 
 export function needsNonStreamingTools(

@@ -1,9 +1,3 @@
-// Evidence confidence: quantify how well retrieved evidence matches the user question.
-// Signals (all from retrieval/rerank results, zero extra model calls):
-//   top1_score      best rerank score
-//   valid_count     evidence above VALID_SCORE_FLOOR
-//   margin          top1 - top2 (focus of the evidence)
-//   key_clause_hit  any of the top-3 hits contains a key-clause term
 import { KEY_TERMS } from "#/kb/documents.ts";
 import type { KnowledgeHit } from "#/kb/store.ts";
 
@@ -46,13 +40,10 @@ export function computeEvidenceConfidence(
   const top1 = scores[0];
   const margin = scores.length > 1 ? top1 - scores[1] : top1;
   const validCount = scores.filter((s) => s >= VALID_SCORE_FLOOR).length;
-  const keyHit = hits
-    .slice(0, 3)
-    // Case-insensitive: the KB uses Title Case headings and sentence-case bodies.
-    .some((h) => {
-      const text = `${h.question}${h.answer}`.toLowerCase();
-      return KEY_TERMS.some((t) => text.includes(t));
-    });
+  const keyHit = hits.slice(0, 3).some((h) => {
+    const text = `${h.question}${h.answer}`.toLowerCase();
+    return KEY_TERMS.some((t) => text.includes(t));
+  });
   const score =
     W_TOP1 * clip01(top1) +
     W_VALID * (Math.min(validCount, VALID_COUNT_CAP) / VALID_COUNT_CAP) +

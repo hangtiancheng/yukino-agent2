@@ -1,4 +1,3 @@
-// Mock business data source. Deterministic per key (same key -> same snapshot).
 export interface OrderSnapshot {
   order_id: string;
   status: string;
@@ -8,7 +7,6 @@ export interface OrderSnapshot {
   tracking_no: string;
 }
 
-// FNV-1a string hash feeding a mulberry32 PRNG: stable across runs, unlike Math.random.
 function seedFrom(key: string): () => number {
   let h = 0x811c9dc5;
   for (let i = 0; i < key.length; i += 1) {
@@ -50,7 +48,6 @@ export function orderSnapshot(orderId: string): OrderSnapshot {
   };
 }
 
-// Demo orders referenced across docs and acceptance scripts.
 export const DEMO_ORDER_IDS = ["1001", "2002"] as const;
 
 export interface UserOrder {
@@ -82,7 +79,6 @@ export function listUserOrders(userId: string): UserOrder[] {
 }
 
 export function ownsOrder(userId: string, orderId: string): boolean {
-  // Empty user id never passes: identity is injected, not user-supplied.
   if (!userId || !orderId) {
     return false;
   }

@@ -1,4 +1,3 @@
-// Flywheel batch: pool -> normalize/dedup -> review queue.
 import { processPending } from "#/core/flywheel.ts";
 import { closeDb } from "#/db/client.ts";
 

@@ -1,5 +1,3 @@
-// Graph nodes: reference resolution, intent routing, retrieval, the ReAct loop and the
-// deterministic exits (complaint / script / fallback) plus audit logging.
 import {
   AIMessage,
   HumanMessage,
@@ -63,7 +61,6 @@ function userText(state: GraphState): string {
 }
 
 function historyText(state: GraphState, maxTurns = 6): string {
-  // Summary line + the last turns of the sliding window (excluding the current message).
   const msgs = memory.buildWindow(
     state.messages,
     state.summaryUptoMsgId ?? 0,
@@ -80,7 +77,6 @@ function historyText(state: GraphState, maxTurns = 6): string {
   return head ? `${head}\n${body}`.trim() : body;
 }
 
-// A run of 4+ digits is treated as an order id; lookarounds because CJK and digits are both \w.
 const ORDER_RE = /(?<!\d)(\d{4,})(?!\d)/;
 
 function extractOrderId(text: string): string | null {
@@ -89,8 +85,6 @@ function extractOrderId(text: string): string | null {
 }
 
 export function fetchOrder(state: GraphState): GraphUpdate {
-  // Refund flow step 1: resolve the order id, asking the UI for a selection when needed.
-  // Only read-only work happens before interrupt; the node restarts from the top on resume.
   const uid = state.userId ?? "";
   let oid: string | null =
     state.orderId || extractOrderId(state.resolvedQuery || userText(state));
@@ -114,7 +108,6 @@ export function fetchOrder(state: GraphState): GraphUpdate {
 }
 
 export async function retrievePolicy(state: GraphState): Promise<GraphUpdate> {
-  // Refund flow forced retrieval: expand into 3 queries, merge by chunk id, keep best score.
   const base = state.resolvedQuery || userText(state);
   const orderData = state.orderData ?? {};
   const seed = `${base} ${orderData.status ?? ""}`.trim();
@@ -160,7 +153,6 @@ export async function retrievePolicy(state: GraphState): Promise<GraphUpdate> {
 }
 
 export function scriptReply(state: GraphState): GraphUpdate {
-  // Deterministic exit for chitchat / other intents: pick the script by intent.
   const text =
     state.intent === "other" ? SCRIPT_REPLY_OTHER : SCRIPT_REPLY_CHITCHAT;
   const trace: Record<string, unknown> = { route: "fallback_script" };
@@ -180,7 +172,6 @@ export function complaintReply(state: GraphState): GraphUpdate {
 }
 
 export async function fallbackReply(state: GraphState): Promise<GraphUpdate> {
-  // Weak evidence: reply with the fallback script and add the question to the flywheel pool.
   const source = state.fallbackSource || "retrieval_low_conf";
   const signals = state.trace?.confidence_signals ?? {};
   let reason = `evidence_confidence=${(state.evidenceConfidence ?? 0).toFixed(3)} signals=${JSON.stringify(signals)}`;
@@ -188,7 +179,6 @@ export async function fallbackReply(state: GraphState): Promise<GraphUpdate> {
     const selfCheck = state.trace?.self_check;
     reason += ` self_check=${typeof selfCheck === "string" ? selfCheck : ""}`;
   }
-  // Snapshot tri-state: retrieved with hits = list; retrieved with zero hits = []; no retrieval = null.
   const walkedRetrieval = Boolean(state.fallbackSource);
   const snapshot = state.retrievedSnapshot ?? (walkedRetrieval ? [] : null);
   await repository.insertLowConfidence(
@@ -211,7 +201,6 @@ export async function resolveReference(
 ): Promise<GraphUpdate> {
   const query = userText(state);
   const history = historyText(state);
-  // Observable per turn: the summary line plus the sliding window.
   log.info(
     { conv: state.conversationId, history: history || "(no history)" },
     "history_ctx",
@@ -227,8 +216,6 @@ export async function classifyIntent(state: GraphState): Promise<GraphUpdate> {
   const query = state.resolvedQuery || userText(state);
   const result = await intentMod.classify(query, historyText(state));
   const route = INTENT_TO_ROUTE[result.intent] ?? "business";
-  // Write the intent into the live trace (metadata + tag) so the cost ledger can
-  // group token spend by intent; degrades to a no-op without Langfuse.
   observability.tagIntent(result.intent, result.confidence);
   const trace: Record<string, unknown> = {
     intent: result.intent,
@@ -246,7 +233,6 @@ export async function classifyIntent(state: GraphState): Promise<GraphUpdate> {
 export async function retrieveKnowledge(
   state: GraphState,
 ): Promise<GraphUpdate> {
-  // Knowledge-intent forced retrieval with the calibrated confidence gate.
   const queryRaw = userText(state);
   const u = await queryUnderstanding.understand(queryRaw);
   const query = u.standard;
@@ -315,7 +301,6 @@ export async function retrieveKnowledge(
 }
 
 export function confidenceCheck(state: GraphState): GraphUpdate {
-  // Entity node recording the gate decision; the actual split is the conditional edge.
   const trace: Record<string, unknown> = {
     confidence: state.evidenceStrong ? "strong" : "weak",
   };
@@ -328,7 +313,6 @@ const KNOWLEDGE_EVIDENCE_HINT =
   "Copy model numbers verbatim as written in the evidence; do not write any model number absent from the evidence; state conditional conclusions together with their conditions.\n";
 
 function turnContext(state: GraphState): string {
-  // Per-turn material: summary + retrieved evidence + refund order data.
   const parts: string[] = [];
   const ss = memory.summarySystem(state.summary ?? "");
   if (ss !== null) {
@@ -349,7 +333,6 @@ function withTurnContext(
   window: BaseMessage[],
   turnCtx: string,
 ): BaseMessage[] {
-  // Insert after the last user message so the ReAct steps keep a stable cacheable prefix.
   const msg = new HumanMessage({ content: turnCtx, id: TURN_CTX_ID });
   for (let i = window.length - 1; i >= 0; i -= 1) {
     if (HumanMessage.isInstance(window[i])) {
@@ -360,8 +343,6 @@ function withTurnContext(
 }
 
 function agentMessages(state: GraphState): BaseMessage[] {
-  // Exactly one SystemMessage (the persona): upstreams hoist system messages and would
-  // break the cacheable prefix if the summary came as a second system message.
   let window = memory.buildWindow(
     state.messages,
     state.summaryUptoMsgId ?? 0,
@@ -401,7 +382,6 @@ export async function mainAgent(
   state: GraphState,
   config: LangGraphRunnableConfig,
 ): Promise<GraphUpdate> {
-  // ReAct reasoning step: bind tools and invoke. Token usage is accumulated step by step.
   const specs = await registry.getAllSpecs();
   const toolDefs = specs.map((s) => ({
     type: "function" as const,
@@ -440,7 +420,6 @@ export async function mainAgent(
 
 const confirmResumeSchema = z.object({ confirmed: z.boolean() });
 
-// usage_metadata is not statically typed through the bound-tool runnable; validate at runtime.
 const usageSchema = z.object({
   input_tokens: z.number().optional(),
   output_tokens: z.number().optional(),
@@ -451,8 +430,6 @@ const usageSchema = z.object({
 });
 
 export async function agentTools(state: GraphState): Promise<GraphUpdate> {
-  // ReAct action step: every tool goes through the execution engine. create_ticket needs a
-  // confirmation interrupt; submit_refund is intercepted and turned into a UI refund form.
   const last = state.messages[state.messages.length - 1];
   if (!(last instanceof AIMessage)) {
     return {};
@@ -493,7 +470,6 @@ export async function agentTools(state: GraphState): Promise<GraphUpdate> {
   for (const tc of toolCalls) {
     const args = tc.args ?? {};
     if (tc.name === "submit_refund") {
-      // Intercepted before the engine, so check ownership here or the refund path bypasses it.
       if (!business.ownsOrder(uid, String(args.order_id ?? ""))) {
         notOwned = true;
         toolMsgs.push(

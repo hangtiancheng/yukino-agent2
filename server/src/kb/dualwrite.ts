@@ -1,9 +1,3 @@
-// Dual write: relational rows first (pending), then vectors, then mark done.
-//
-// Legacy mode (MILVUS_URI empty) stores the embedding on the relational row. Milvus mode
-// upserts the dense vector plus the BM25 source text into Milvus Standalone through the
-// Node SDK (the server derives the sparse vector from the text) and records only the
-// vector id + status on the row (the embedding column stays null). See src/kb/milvus.ts.
 import type { Chunk } from "./documents.ts";
 import * as milvus from "./milvus.ts";
 
@@ -54,9 +48,6 @@ function* batches<T>(items: T[], size: number): Generator<T[]> {
   }
 }
 
-// The Aliyun embed gateway rejects more than 20 texts per request, while the vectorize
-// batch is 64 (the Milvus upsert granularity). Split each batch's embed calls so small
-// upstream caps are satisfied without shrinking the Milvus upsert batches.
 const MAX_EMBED_BATCH = 20;
 
 async function embedInChunks(texts: string[]): Promise<number[][]> {
@@ -76,8 +67,6 @@ export async function vectorizePending(batchSize = 64): Promise<number> {
   const externalIds: number[] = [];
   let done = 0;
   for (const batch of batches(pending, batchSize)) {
-    // One string serves both vector paths: it is embedded into `dense` and stored as `text`
-    // for the in-Milvus BM25 Function.
     const texts = batch.map(
       (row) => `${row.category}\n${row.questions}\n${row.answer}`,
     );

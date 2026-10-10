@@ -1,4 +1,3 @@
-// User-action endpoints: create ticket / refund form submission and interrupt resume (SSE).
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { streamSSE } from "hono/streaming";

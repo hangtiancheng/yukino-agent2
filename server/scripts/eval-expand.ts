@@ -1,5 +1,3 @@
-// Query expansion labeled evaluation: the core scenario yields 3 queries + stable JSON + keeps the
-// key entities. Requires chat upstream. Run: node scripts/eval-expand.ts
 import { expandQueries } from "#/core/query-understanding.ts";
 
 const CASES = [

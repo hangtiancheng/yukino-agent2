@@ -1,5 +1,3 @@
-// Cost control: aggregate token spend per intent from the Langfuse metrics API.
-// Intents are tagged on each turn ("intent:<name>"); rows without the tag are ignored.
 import fs from "node:fs";
 import path from "node:path";
 
@@ -52,9 +50,6 @@ async function query(
   from: string,
   to: string,
 ): Promise<Record<string, unknown>[]> {
-  // Langfuse legacy v1 metrics endpoint: GET /api/public/metrics?query=<urlencoded JSON>.
-  // The v2 endpoint rejects high-cardinality dimensions like traceId, so the ledger stays
-  // on v1.
   const query = {
     view: "observations",
     metrics: [{ measure: "totalTokens", aggregation: "sum" }],

@@ -18,10 +18,6 @@ import thumbsUpSvg from "lucide-static/icons/thumbs-up.svg?raw";
 import wrenchSvg from "lucide-static/icons/wrench.svg?raw";
 import xSvg from "lucide-static/icons/x.svg?raw";
 
-/* Icons come from lucide-static: the raw SVG files are bundled at build time
-   (vite ?raw imports) and injected inline, so they inherit currentColor and are
-   sized by the CSS class, with no runtime icon package. */
-
 const SVGS = {
   cat: catSvg,
   "circle-alert": circleAlertSvg,
@@ -47,14 +43,10 @@ export type IconName = keyof typeof SVGS;
 
 export interface IconProps {
   name: IconName;
-  /** Tailwind sizing classes applied to the <svg> (default "h-5 w-5") */
   class?: string;
   strokeWidth?: number;
 }
 
-/** Inline a lucide icon. The SVG source is a trusted build-time constant from
-    lucide-static; only the class/stroke-width substitutions below are dynamic
-    and both come from internal call sites, never from user data. */
 export function Icon({ name, class: cls, strokeWidth }: IconProps) {
   let svg = SVGS[name]
     .replace(/<!--[\s\S]*?-->\s*/, "")

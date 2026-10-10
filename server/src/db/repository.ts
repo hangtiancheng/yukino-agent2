@@ -1,4 +1,3 @@
-// Data access layer. JSON-ish columns are stored as text and validated on read.
 import { z } from "zod";
 
 import { prisma } from "./client.ts";
@@ -23,8 +22,6 @@ export interface AppendMessageOptions {
   toolCalls?: unknown;
   toolCallId?: string | null;
 }
-
-// ---------- conversations / messages ----------
 
 export async function createConversation(userId: string): Promise<number> {
   const conv = await prisma.conversation.create({ data: { userId } });
@@ -112,8 +109,6 @@ export async function listConversations(
   return out;
 }
 
-// ---------- conversation context (sliding window / summaries) ----------
-
 export async function countMessagesAfter(
   conversationId: number,
   afterId: number | null,
@@ -192,8 +187,6 @@ export async function listSummarySegments(
   });
   return rows.map((r) => r.content).reverse();
 }
-
-// ---------- knowledge chunks / staging ----------
 
 export interface InsertChunkInput {
   category: string;
@@ -406,9 +399,6 @@ export async function knowledgeRevision(): Promise<string> {
 }
 
 export async function listVectorizedChunks(): Promise<VectorizedChunk[]> {
-  // No `embedding != null` filter: in Milvus mode the vectors live in Milvus Standalone and
-  // this column stays null. The rows only feed the legacy in-process index (store.ts), which
-  // tolerates empty embeddings (dense cosine skips them) and scores BM25 off the text.
   const rows = await prisma.knowledgeChunk.findMany({
     where: { vectorizeStatus: "done" },
     orderBy: { id: "asc" },
@@ -502,8 +492,6 @@ export async function setStagingStatus(
   });
 }
 
-// ---------- low confidence pool ----------
-
 export async function insertLowConfidence(
   conversationId: number | null,
   rawQuestion: string,
@@ -538,8 +526,6 @@ export async function listConversationsWithMessages() {
   }
   return out;
 }
-
-// ---------- flywheel / review queue ----------
 
 export async function fetchUnmatchedLowConf(limit: number) {
   return prisma.lowConfidenceQuestion.findMany({
@@ -656,8 +642,6 @@ export async function deleteKnowledgeChunks(ids: number[]): Promise<void> {
   await prisma.knowledgeChunk.deleteMany({ where: { id: { in: ids } } });
 }
 
-// ---------- eval runs ----------
-
 export interface EvalRunRow {
   id: number;
   triggeredBy: string;
@@ -691,8 +675,6 @@ export async function listEvalRuns(limit = 10): Promise<EvalRunRow[]> {
   }));
 }
 
-// ---------- tool audit ----------
-
 export interface ToolAuditInput {
   conversationId: number | null;
   toolCallId: string | null;
@@ -724,8 +706,6 @@ export async function insertToolAudit(input: ToolAuditInput): Promise<void> {
     },
   });
 }
-
-// ---------- faith case ledger ----------
 
 export interface UpsertFaithCaseOptions {
   citations?: unknown;

@@ -1,5 +1,3 @@
-// After-sales MCP server (mock data, separate process, Streamable HTTP on :8102).
-// Tools: warranty status and return progress.
 import { serve } from "@hono/node-server";
 import { McpServer, createMcpHandler } from "@modelcontextprotocol/server";
 import { Hono } from "hono";
@@ -47,9 +45,9 @@ server.registerTool(
     const code = pick(rng, ["IN_WARRANTY", "EXPIRED"]);
     const payload = {
       order_id,
-      warranty_code: code, // internal enum; translated on the client side
+      warranty_code: code,
       warranty_until: `2026-${String(Math.floor(rng() * 5) + 8).padStart(2, "0")}-${String(Math.floor(rng() * 28) + 1).padStart(2, "0")}`,
-      policy_ref: "AS-POLICY-07", // internal policy ref; dropped by the client formatter
+      policy_ref: "AS-POLICY-07",
     };
     return {
       content: [{ type: "text" as const, text: JSON.stringify(payload) }],

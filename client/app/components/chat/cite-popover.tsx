@@ -15,9 +15,6 @@ export interface CiteTarget {
   rect: DOMRect;
 }
 
-/** Citation popover: clicking a [n] marker shows its section_path + source text.
-    Positioned below the marker and pulled back inside if it overflows the viewport's
-    right/bottom edge; closes on outside click / Esc / scroll / resize. */
 @customElement("cite-popover")
 export class CitePopover extends LightElement {
   @property({ attribute: false }) target: CiteTarget | null = null;
@@ -54,7 +51,6 @@ export class CitePopover extends LightElement {
       this.detach();
       return;
     }
-    // Render first, then measure and position (height depends on content)
     void this.updateComplete.then(() => {
       this.measure();
       const pop = this.popRef.value;

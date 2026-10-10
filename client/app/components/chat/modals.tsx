@@ -6,10 +6,6 @@ import { Btn } from "~/components/ui";
 import { api, jsonPost } from "~/lib/api";
 import { cn } from "~/lib/cn";
 
-/* The create-ticket / refund form modals (from the original index.html).
-   On success, onSuccess(ticketNo) is called; the page then disables the trigger
-   button and appends a system message. */
-
 const FIELD_LABEL = "text-label-medium text-on-surface-variant mb-1.5 block";
 const FIELD_INPUT =
   "border-outline text-on-surface placeholder:text-on-surface-variant focus:border-primary focus:ring-primary w-full rounded-sm border bg-transparent px-3.5 py-2.5 text-body-medium outline-none transition-[border-color,box-shadow] duration-200 focus:ring-1";
@@ -29,14 +25,12 @@ export class TicketModal extends ModalShell {
   @state() private desc = "";
   @state() private err = "";
   @state() private submitting = false;
-  /** Uncontrolled textarea (see chat.tsx for why); the open-reset writes through the ref */
   private descRef = createRef<HTMLTextAreaElement>();
 
   protected override updated(
     changed: Map<string | number | symbol, unknown>,
   ): void {
     super.updated(changed);
-    // Reset on every open: no preselected category, empty description — the user fills it in
     if (changed.has("open") && this.open) {
       this.type = "";
       this.desc = "";
@@ -157,7 +151,6 @@ export class RefundModal extends ModalShell {
     changed: Map<string | number | symbol, unknown>,
   ): void {
     super.updated(changed);
-    // Same as TicketModal: reset the moment it opens
     if (changed.has("open") && this.open) {
       this.reason = "";
       this.err = "";

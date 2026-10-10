@@ -1,12 +1,5 @@
-// Context budget: allocate the model window across fixed blocks, then the sliding window.
-//
-// Two different per-turn numbers must not be conflated:
-//   peak   turnPeakTokens()       transient usage of the current ReAct turn
-//   steady historyPerTurn()       what the turn leaves behind once compressed into history
-// The startup self-check asks about the peak; sliding-window coverage asks about the steady value.
 import { settings } from "#/config.ts";
 
-// OpenAI-compatible /v1/models does not expose context length; keep a local prefix table.
 const KNOWN_WINDOWS: Record<string, number> = {
   "minimax-m3": 1_000_000,
   "minimax-m2": 204_800,
@@ -27,7 +20,6 @@ const KNOWN_WINDOWS: Record<string, number> = {
 const FALLBACK_WINDOW = 32_768;
 
 export function lookupWindow(model: string): [number, boolean] {
-  // Upstreams often carry a provider prefix (deepseek-ai/deepseek-flash); use the tail.
   const name = String(model ?? "")
     .trim()
     .toLowerCase()

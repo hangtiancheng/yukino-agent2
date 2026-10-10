@@ -1,4 +1,3 @@
-// query_faq: RAG pipeline (rewrite + hybrid retrieval + rerank + self-check) exposed as a tool.
 import { z } from "zod";
 
 import { settings } from "#/config.ts";
@@ -58,7 +57,6 @@ export async function queryFaq(args: FaqArgs): Promise<FaqResult> {
     bm25Text,
   });
 
-  // Category is model-generated and often wrong; a bad filter must not cause refusal.
   if (
     category &&
     (hits.length === 0 || (hits[0].rerank_score ?? 0) < settings.rerankMinScore)
@@ -120,7 +118,6 @@ register(
       "Search the FAQ/policy knowledge base (hybrid retrieval + rerank). Use it for general questions about policies, rules, timeframes, fees, and product manuals. " +
       "Returns numbered evidence to cite when answering; when the evidence is insufficient it returns sufficient=False, and you must decline to answer the user accordingly.",
     schema: faqInputSchema,
-    // The RAG pipeline is slow by nature; a timeout is usually upstream slowness, so no retry.
     timeout: 30.0,
     maxRetries: 0,
     handler: async (args) => {

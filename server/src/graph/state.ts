@@ -1,5 +1,3 @@
-// LangGraph conversation state. Channels without a custom reducer keep the last value;
-// `messages` appends and `trace` merges.
 import type { BaseMessage } from "@langchain/core/messages";
 import { Annotation, messagesStateReducer } from "@langchain/langgraph";
 
@@ -33,7 +31,6 @@ export function mergeDict(
   a: Record<string, unknown> | null,
   b: Record<string, unknown> | null,
 ): Record<string, unknown> {
-  // `None` is the entry-point reset sentinel: the merge channel cannot be cleared with {}.
   if (b === null || b === undefined) {
     return {};
   }
@@ -66,7 +63,6 @@ export const ConversationState = Annotation.Root({
   steps: Annotation<number>(),
   tokensUsed: Annotation<number>(),
   suggestedActions: Annotation<SuggestedAction[]>(),
-  // trace accepts null from the entry point as a reset sentinel; inside the graph it is a dict.
   trace: Annotation<Record<string, unknown> | null>({
     reducer: mergeDict,
     default: () => ({}),

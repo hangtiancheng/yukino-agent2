@@ -20,8 +20,6 @@ let repository: typeof RepositoryExports;
 let admin: Client;
 let dbName: string;
 
-// Maintenance connection base; override with TEST_DATABASE_URL when the local server
-// needs credentials or a non-default port.
 const baseUrl = new URL(
   process.env.TEST_DATABASE_URL ?? "postgresql://127.0.0.1:5432/postgres",
 );

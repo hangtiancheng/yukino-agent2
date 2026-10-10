@@ -1,5 +1,3 @@
-// Background segmented summarization: triggered after a turn when layer 2 exceeds its budget.
-// One batch produces one new segment; existing segments are never re-summarized.
 import { z } from "zod";
 
 import * as budget from "./budget.ts";
@@ -25,8 +23,6 @@ export async function summarizeDialog(
   oldSummary: string,
   dialog: string,
 ): Promise<string> {
-  // old_summary is background only: the output is a new segment, so order ids and
-  // similar facts are compressed exactly once.
   const model = structured(summarySchema, { slot: "summary" });
   const result = await SUMMARY_PROMPT.pipe(model).invoke({
     old_summary: oldSummary || "(none)",
@@ -113,7 +109,6 @@ async function shouldSummarize(
 export async function maybeScheduleSummary(
   conversationId: number,
 ): Promise<void> {
-  // Called after a turn; runs in the background and never blocks the reply.
   try {
     if (running.has(conversationId)) {
       return;
@@ -126,7 +121,7 @@ export async function maybeScheduleSummary(
       return;
     }
     if (running.has(conversationId)) {
-      return; // re-check after awaits (TOCTOU)
+      return;
     }
     const task = runSummary(conversationId);
     running.set(conversationId, task);

@@ -1,10 +1,6 @@
-// Smoke the rerank upstream through the same code path the app uses. A failure is a red line: stop.
-// Run: node scripts/smoke-rerank.ts
 import { rerank } from "#/core/rerank.ts";
 
 async function main(): Promise<void> {
-  // Use the app's own rerank() rather than re-assembling the request here: the smoke test must
-  // exercise the exact request shape the application sends, not a second implementation.
   const ranked = await rerank(
     "who pays the return shipping fee",
     [

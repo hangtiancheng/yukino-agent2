@@ -20,7 +20,8 @@ pnpm dev:client                     # Vite dev server on :5173, proxies /api/* t
 ```
 
 Root scripts delegate into the workspaces: `pnpm start` (API without MCP servers), `pnpm test`
-(server vitest suite), `pnpm typecheck` (both packages), `pnpm build` (client dist),
+(server vitest suite), `pnpm typecheck` (both packages), `pnpm build` (client dist + server
+tsdown bundle in `server/dist/`; run the bundled API with `pnpm -C server start:prod`),
 `pnpm lint` / `pnpm format` (eslint/prettier over the whole repo, configs at the root).
 `node server/main.js help` lists every backend task (dev services, KB jobs, evals, Milvus).
 

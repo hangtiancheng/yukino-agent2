@@ -1,7 +1,3 @@
-// Data flywheel batch pipeline: normalize + dedup low-confidence questions into the review queue.
-//
-// Cursor = low_confidence_questions.matched_review_id IS NULL, so the job is idempotent.
-// Items are processed serially so same-batch synonyms merge into the row created moments ago.
 import { z } from "zod";
 
 import { structured } from "./llm.ts";
@@ -42,7 +38,6 @@ export async function processPending(limit = 50): Promise<ProcessStats> {
     skipped: 0,
   };
   for (const row of rows) {
-    // Fetch per row so rows created in this batch are candidate matches.
     const fetched = await repository.listReviewCandidates(201);
     const truncated = fetched.length > 200;
     const candidates = fetched.slice(0, 200);

@@ -1,4 +1,3 @@
-// Evaluation pipeline: run the rag dataset once, store a row in eval_runs, print the trend.
 import fs from "node:fs";
 import path from "node:path";
 
@@ -21,9 +20,6 @@ const GRADED_BUCKETS = ["A_policy", "B_model", "C_colloquial", "E_multi"];
 const RECALL_K = 5;
 const METRICS = ["recall_at_5", "mrr", "faithfulness", "refusal_rate"] as const;
 const CALL_TIMEOUT = 45_000;
-// Same caps as the rag eval (eval-rag.ts): one clause-split query fans out into several
-// embed + rerank calls, so unbounded concurrency would trip upstream rate limits and
-// silently null out samples.
 const RETR_CONCURRENCY = 5;
 const GEN_CONCURRENCY = 5;
 

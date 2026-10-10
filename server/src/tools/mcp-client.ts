@@ -1,5 +1,3 @@
-// MCP client: tool lists are fetched per turn (server-side tool changes need no restart).
-// Permissions and result formatting are decided on our side.
 import {
   Client,
   StreamableHTTPClientTransport,
@@ -194,7 +192,6 @@ export async function fetchMcpSpecs(): Promise<ToolSpec[]> {
           mcpServer: server,
           formatResult: FORMATTERS[tool.name] ?? null,
           handler: async (args) => {
-            // Fresh session per call: the adapters style of one connection per invocation.
             return withClient(url, async (client) => {
               const result = await client.callTool({
                 name: tool.name,

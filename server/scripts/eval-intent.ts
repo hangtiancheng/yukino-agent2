@@ -1,5 +1,3 @@
-// intent end-to-end acceptance evaluation. Requires the full stack running
-// (DB + MCP servers + chat upstream + this app). Run: node scripts/eval-intent.ts
 import { z } from "zod";
 
 import { settings } from "#/config.ts";
@@ -52,20 +50,16 @@ interface CaseResult {
 async function main(): Promise<void> {
   const results: CaseResult[] = [];
 
-  // Acceptance 1: multi-turn logistics -> refund -> logistics; each turn's intent/coref follows the
-  // context (details in the app logs: intent/route/coref)
   const r1 = await agent("Where is order 1001 now");
   const cid = r1.conversation_id;
-  await agent("Then I want to return it", cid); // coref on "it" + intent drifts to refund_return
-  await agent("Never mind, where is it now", cid); // drifts back to logistics
+  await agent("Then I want to return it", cid);
+  await agent("Never mind, where is it now", cid);
   results.push({
     name: "Acceptance 1 multi-turn intent drift (see intent/route in the logs)",
     ok: true,
     detail: `conv=${cid}; the logs should show route logistics -> refund_flow -> logistics`,
   });
 
-  // Acceptance 3: "can this be returned" first resolves the reference, then walks the refund
-  // sub-flow (with an order id, so no interrupt)
   const b3 = await agent("Can order 2002 be returned");
   const acts3 = new Set(b3.suggested_actions.map((a) => a.type));
   results.push({
@@ -77,7 +71,6 @@ async function main(): Promise<void> {
     }),
   });
 
-  // Acceptance 4 (non-streaming half): asking for a refund without an order id -> interrupt returns the order list
   const b4 = await agent("I want a refund");
   results.push({
     name: "Acceptance 4 missing order id pops the order selector (interrupt)",

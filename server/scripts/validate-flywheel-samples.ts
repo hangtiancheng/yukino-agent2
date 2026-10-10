@@ -1,9 +1,3 @@
-// observability prompt labeled-sample validation (working requirement: for a pure-prompt task, run the
-// labeled samples once instead of TDD).
-// Scoring: matched_question_id equals expect_match = dedup correct; normalized_question contains all
-// expect_keywords = normalization correct (keywords are only checked on the create-new samples).
-// Both must pass; a pass rate >= 80% counts as usable. Requires chat upstream.
-// Run: node scripts/validate-flywheel-samples.ts
 import fs from "node:fs";
 import path from "node:path";
 
@@ -15,8 +9,6 @@ import { FLYWHEEL_NORMALIZE_PROMPT } from "#/core/prompts.ts";
 
 const THRESHOLD = 0.8;
 
-// Same schema and prompt the flywheel pipeline uses (src/core/flywheel.ts inlines this call inside
-// processPending and does not export it, so the validation replicates the exact same chain).
 const normalizeSchema = z.object({
   normalized_question: z.string().describe("FAQ-style standard question"),
   matched_question_id: z

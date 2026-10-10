@@ -1,4 +1,3 @@
-// Flywheel entry point 3: user feedback pools unsolved questions (down-vote only).
 import { Hono } from "hono";
 
 import { parseJsonBody } from "./http.ts";

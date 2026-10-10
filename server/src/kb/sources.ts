@@ -1,5 +1,3 @@
-// Knowledge base source manifest: which files are ingested and their content types.
-// One definition shared by offline build, preview and the ingest page.
 import path from "node:path";
 
 import { settings } from "#/config.ts";

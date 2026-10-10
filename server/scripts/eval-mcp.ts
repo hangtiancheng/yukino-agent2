@@ -1,8 +1,3 @@
-// mcp acceptance end-to-end evaluation: ticket-confirm flow (follow-up / preview / confirm /
-// cancel) + logistics served by the MCP server. Requires the full stack running
-// (DB + both MCP servers + chat upstream + this app). Run: node scripts/eval-mcp.ts
-// Criteria are the acceptance standard: interrupt presence / ticket rows / audit status / tool
-// trace; the follow-up wording is printed for human review (prompt-class output).
 import { z } from "zod";
 
 import { settings } from "#/config.ts";
@@ -67,8 +62,6 @@ async function resume(
   conversationId: number,
   confirmed: boolean,
 ): Promise<string> {
-  // POST /api/actions/resume (SSE); concatenate the deltas into the final answer text. This is an
-  // eval script, so read the whole body once rather than streaming it chunk by chunk.
   const resp = await fetch(`${BASE}/api/actions/resume`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -129,7 +122,6 @@ interface CaseResult {
 async function main(): Promise<void> {
   const results: CaseResult[] = [];
 
-  // ---- Acceptance 4a: clearly wants a ticket but never states the problem -> follow-up question, no card, no row ----
   const ticketsBefore = await countTickets();
   const r1 = await agent("Please create a ticket for me");
   const cid = r1.conversation_id;
@@ -141,7 +133,6 @@ async function main(): Promise<void> {
     detail: `answer=${JSON.stringify(r1.answer)}`,
   });
 
-  // ---- Acceptance 4b: the problem description is supplied -> the ticket preview card pops (interrupt confirm_ticket) ----
   const r2 = await agent(
     "My smart litter box is leaking electricity; it trips the breaker as soon as it powers on",
     cid,
@@ -157,7 +148,6 @@ async function main(): Promise<void> {
     detail: `interrupt=${JSON.stringify(intr)}`,
   });
 
-  // ---- Acceptance 4c: confirm and submit -> one row in tickets, audit success, answer carries the ticket number ----
   const answer = await resume(cid, true);
   const ticketNo = await latestTicketNo();
   const ticketsAfter = await countTickets();
@@ -172,7 +162,6 @@ async function main(): Promise<void> {
     detail: `ticket_no=${ticketNo} audit=${auditOk} answer=${JSON.stringify(answer)}`,
   });
 
-  // ---- Acceptance 5: reach the preview card then cancel -> no ticket, audit permission_denied ----
   const r3 = await agent(
     "Please create a ticket for me; the third level of my cat tree collapsed",
   );
@@ -194,11 +183,9 @@ async function main(): Promise<void> {
     detail: `interrupt=${intr3?.type ?? "none"} audit=${auditDeny} answer=${JSON.stringify(answer3)}`,
   });
 
-  // ---- Acceptance 2: the logistics trace is served by the logistics MCP server (tool trace + audit source) ----
   const r4 = await agent("Where is the logistics for order 1001");
   const names = r4.tool_calls.map((tc) => tc.name);
   const lg = r4.tool_results.filter((tr) => tr.name === "query_logistics");
-  // The MCP result formatter translates status codes to English (see src/tools/mcp-client.ts).
   const enStatus = [
     "Picked up",
     "In transit",

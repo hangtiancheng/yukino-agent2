@@ -1,4 +1,3 @@
-// Non-streaming agent endpoint used by evaluations and tests.
 import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";

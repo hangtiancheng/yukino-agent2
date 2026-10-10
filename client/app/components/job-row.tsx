@@ -10,11 +10,6 @@ import { Icon } from "~/lib/icons";
 import { LightElement } from "~/lib/light-element";
 import type { JobSpec, JobStatus } from "~/lib/types";
 
-/* The "re-run" button machinery.
-   Interaction contract: POST to start → poll status + log tail every 1.2s → on a
-   terminal state (ok/failed/stopped) stop polling and tell the page to refetch.
-   Job names are constants in the backend allowlist; the frontend only passes names. */
-
 const STATUS_LABEL: Record<JobStatus, string> = {
   idle: "Not run",
   running: "Running",
@@ -23,10 +18,6 @@ const STATUS_LABEL: Record<JobStatus, string> = {
   stopped: "Stopped",
 };
 
-/** Log-tail cache: when a job finishes it tells the page to refetch, and the refetch
-    rebuilds the buttons and the log window wholesale. The cache is keyed by job name
-    and pasted back on rebuild — otherwise the log vanishes the instant the job ends
-    and the conclusion can't be read. */
 const JOB_LOGS = new Map<string, string>();
 
 interface RunState {
@@ -47,8 +38,6 @@ export class JobButton extends LightElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    // The job may already be running when the page opens (started from another
-    // tab): attach polling right away so it doesn't look stuck.
     this.syncFromSpec();
   }
 
@@ -58,7 +47,6 @@ export class JobButton extends LightElement {
   }
 
   protected override updated(changed: PropertyValues): void {
-    // After a refetch the spec is a new object: resync state, preferring the cached log.
     if (changed.has("spec")) {
       this.syncFromSpec();
     }
@@ -199,7 +187,6 @@ export class JobButton extends LightElement {
   }
 }
 
-/** A row of job buttons + the single log window they share */
 @customElement("job-row")
 export class JobRow extends LightElement {
   @property({ attribute: false }) specs: JobSpec[] = [];
@@ -219,8 +206,6 @@ export class JobRow extends LightElement {
     }
   }
 
-  /** Prefer the freshest log we know about (spec tail, then cross-rebuild cache);
-      never clobber a live log with an empty seed. */
   private seedLog(): void {
     let l = "";
     for (const s of this.specs) {

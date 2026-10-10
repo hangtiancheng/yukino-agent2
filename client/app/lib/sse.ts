@@ -1,6 +1,5 @@
 import type { ActionItem, Citation, InterruptFrame } from "./types";
 
-/** SSE frame (matches the frame format of the backend /api/chat and /api/actions/resume) */
 type SseFrame =
   | { event: "tool"; name: string }
   | { event: "citations"; items: Citation[] }
@@ -18,8 +17,6 @@ export interface SseHandlers {
   done?: (conversationId: number) => void;
 }
 
-/** Read one SSE stream and dispatch by frame. event: error throws; data: [DONE] ends.
- *  Uses fetch + reader rather than EventSource because the request is a POST with a body. */
 export async function readSSEStream(
   resp: Response,
   on: SseHandlers,
@@ -50,8 +47,6 @@ export async function readSSEStream(
       if (payload === "[DONE]") {
         return;
       }
-      // SSE frame boundary: the shape is guaranteed by the backend stream protocol;
-      // one funnelled assertion before dispatching on the event field.
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- runtime boundary funnel
       const data = JSON.parse(payload) as SseFrame & InterruptFrame;
       if ("event" in data) {

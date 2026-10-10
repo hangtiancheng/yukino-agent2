@@ -1,4 +1,3 @@
-// Graph runtime: checkpointer lifecycle, turn input/resume, streaming events and settlement.
 import {
   AIMessage,
   BaseMessage,
@@ -47,7 +46,6 @@ export class ConversationNotFound extends Error {
 }
 
 function isDuplicateDatabaseError(error: unknown): boolean {
-  // 42P04 = duplicate_database: another process won the create race.
   return (
     typeof error === "object" &&
     error !== null &&
@@ -56,8 +54,6 @@ function isDuplicateDatabaseError(error: unknown): boolean {
   );
 }
 
-// The saver only creates tables/migrations inside an existing database, so create the
-// checkpointer database itself first (mirroring the old ensureSqliteDir behaviour).
 async function ensureCheckpointerDatabase(url: string): Promise<string> {
   const target = new URL(url);
   const dbName = decodeURIComponent(target.pathname.slice(1));
@@ -150,7 +146,6 @@ function baseMessages(value: unknown): BaseMessage[] {
 export async function getTurnSnapshot(
   conversationId: number,
 ): Promise<{ question: string; snapshot: unknown[] }> {
-  // Best-effort snapshot for thumbs-down feedback; the caller only uses it on a question match.
   const state = await getGraph().getState({
     configurable: { thread_id: String(conversationId) },
   });
@@ -214,8 +209,6 @@ function graphInput(
   upto: number,
   layer1: number,
 ): GraphState {
-  // Reset output channels every turn: the checkpointer persists state by thread id, so
-  // scalar channels would otherwise leak the previous turn's values.
   return {
     messages: [new HumanMessage({ content: message, id: `db-${msgId}` })],
     userId,
@@ -301,7 +294,6 @@ export async function settleLayers(
   summaryUpto: number,
   layer1From: number,
 ): Promise<void> {
-  // Move the layer-1 boundary in one step when it exceeds its budget (pure computation).
   try {
     const values = state ?? (await finalState(cid));
     const msgs = baseMessages(values.messages);
@@ -488,7 +480,6 @@ async function* streamEvents(
           for (const m of fields.messages) {
             if (ToolMessage.isInstance(m)) {
               const name = m.name;
-              // submit_refund is intercepted into a UI form; no tool frame for it.
               if (name && name !== "submit_refund") {
                 yield { type: "tool", name };
               }

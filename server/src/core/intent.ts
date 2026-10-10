@@ -1,4 +1,3 @@
-// Intent classification: nine classes + confidence, with a conservative fallback.
 import { z } from "zod";
 
 import { structured } from "./llm.ts";
@@ -40,7 +39,6 @@ export async function classify(
   query: string,
   history = "",
 ): Promise<IntentResult> {
-  // Flat fields avoid upstream 502s on nested schemas. Parse failure falls back to other.
   const model = structured(intentSchema, { slot: "intent" });
   try {
     const result = await INTENT_CLASSIFY_PROMPT.pipe(model).invoke({

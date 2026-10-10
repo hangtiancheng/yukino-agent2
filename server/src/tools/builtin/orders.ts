@@ -1,11 +1,8 @@
-// Builtin order/product query tools. Identity is injected, never model-supplied.
 import { z } from "zod";
 
 import { orderSnapshot, ownsOrder, productSnapshot } from "#/tools/business.ts";
 import { defineTool, register } from "#/tools/registry.ts";
 
-// A missing order and someone else's order return the same message: different wording
-// would turn the tool into an enumeration oracle.
 const NOT_OWNED = {
   error: "No such order was found for you",
   code: "order_not_owned",

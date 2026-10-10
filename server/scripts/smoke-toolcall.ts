@@ -1,13 +1,9 @@
-// Verify for real that the chat upstream returns structured tool_calls. A go/no-go risk gate.
-// Run: node scripts/smoke-toolcall.ts
 import { AIMessage } from "@langchain/core/messages";
 import { z } from "zod";
 
 import { settings } from "#/config.ts";
 import { getChatModel } from "#/core/llm.ts";
 
-// Same binding shape the app uses (src/graph/nodes.ts): OpenAI function-calling descriptors,
-// not langchain BaseTool objects.
 const addSchema = z.object({
   a: z.number().int().describe("The first addend"),
   b: z.number().int().describe("The second addend"),
@@ -25,7 +21,7 @@ const toolDefs = [
 ];
 
 async function main(): Promise<void> {
-  const model = getChatModel(); // non-streaming, direct to settings.chatBaseUrl
+  const model = getChatModel();
   const bound = model.bindTools(toolDefs);
   const ai = await bound.invoke(
     "Please use the tool to compute what 23 plus 19 equals",

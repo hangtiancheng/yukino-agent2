@@ -1,13 +1,6 @@
 import { cn } from "./cn";
 import type { Citation } from "./types";
 
-/** Lightweight markdown → lit templates (zero-dependency, ported from the
- *  original index.html renderer). Text goes through JSX so it is escaped
- *  naturally — none of the original string-concatenated-HTML injection surface;
- *  links only allow http(s). When citations are provided, [n] in the body
- *  renders as a clickable superscript and clicking calls onCite (with the
- *  superscript element for positioning the popover). */
-
 export interface MarkdownOptions {
   citations?: Map<string, Citation>;
   onCite?: (c: Citation, el: HTMLElement) => void;
@@ -79,7 +72,7 @@ function renderInline(s: string, opts: MarkdownOptions): unknown[] {
           </sup>,
         );
       } else {
-        out.push(m[0]); // Not a valid citation number; keep the original text
+        out.push(m[0]);
       }
     }
     last = m.index + m[0].length;
@@ -118,7 +111,6 @@ export function renderMarkdown(
   while (i < lines.length) {
     const line = lines[i] ?? "";
     if (line.startsWith("```")) {
-      // Code block
       const buf: string[] = [];
       i++;
       while (i < lines.length && !/^```\s*$/.test(lines[i] ?? "")) {
@@ -137,7 +129,6 @@ export function renderMarkdown(
     }
     const hm = /^(#{1,6})\s+(.*)$/.exec(line);
     if (hm) {
-      // Heading
       const cls = "text-on-surface mt-3.5 mb-1.5 text-[15px] font-semibold";
       const inline = renderInline(hm[2] ?? "", opts);
       const level = hm[1]?.length ?? 1;
@@ -158,13 +149,11 @@ export function renderMarkdown(
       continue;
     }
     if (/^\s*(---|\*\*\*|___)\s*$/.test(line)) {
-      // Horizontal rule
       out.push(<hr class="border-outline-variant my-3 border-t" />);
       i++;
       continue;
     }
     if (line.includes("|") && isTableSep(lines[i + 1])) {
-      // Table
       const headers = splitRow(line);
       i += 2;
       const rows: string[][] = [];
@@ -205,7 +194,6 @@ export function renderMarkdown(
       continue;
     }
     if (/^\s*[-*+]\s+/.test(line)) {
-      // Unordered list
       const items: unknown[] = [];
       while (i < lines.length && /^\s*[-*+]\s+/.test(lines[i] ?? "")) {
         items.push(
@@ -219,7 +207,6 @@ export function renderMarkdown(
       continue;
     }
     if (/^\s*\d+\.\s+/.test(line)) {
-      // Ordered list
       const items: unknown[] = [];
       while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i] ?? "")) {
         items.push(
@@ -233,7 +220,6 @@ export function renderMarkdown(
       continue;
     }
     if (/^\s*>\s?/.test(line)) {
-      // Blockquote
       const buf: string[] = [];
       while (i < lines.length && /^\s*>\s?/.test(lines[i] ?? "")) {
         buf.push((lines[i] ?? "").replace(/^\s*>\s?/, ""));
@@ -255,7 +241,6 @@ export function renderMarkdown(
       i++;
       continue;
     }
-    // Paragraph
     const para: string[] = [];
     while (
       i < lines.length &&
@@ -286,7 +271,6 @@ export interface MarkdownProps {
   class?: string;
 }
 
-/** Bot bubble body: markdown rendering + optional citation superscripts */
 export function Markdown({
   text,
   citations,

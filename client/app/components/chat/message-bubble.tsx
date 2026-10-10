@@ -10,8 +10,6 @@ import { Markdown } from "~/lib/markdown";
 import { enterOnce } from "~/lib/motion";
 import type { Citation, Order, TicketPreview } from "~/lib/types";
 
-/* ticket_type arrives as the backend enum value (after_sales/complaint/inquiry);
-   render a friendly label, falling back to the raw value for anything unknown. */
 const TICKET_TYPE_LABEL: Record<string, string> = {
   after_sales: "After-sales",
   complaint: "Complaint",
@@ -47,17 +45,13 @@ export class MessageBubble extends LightElement {
   @property({ attribute: false }) msg?: Msg;
   @property({ attribute: false }) cb?: BubbleCallbacks;
 
-  /** Order card picked in this bubble (interrupt or select_order action) */
   @state() private pickedOrder: string | null = null;
-  /** Transfer button already used in this bubble */
   @state() private transferred = false;
 
   override connectedCallback(): void {
     super.connectedCallback();
     enterOnce(this, { y: 12, duration: 0.3 });
   }
-
-  /* ---------- Per-reply satisfaction feedback (one-shot thumbs up/down) ---------- */
 
   private fbBtn(opts: {
     down?: boolean;
@@ -126,9 +120,6 @@ export class MessageBubble extends LightElement {
     );
   }
 
-  /* ---------- Order picker cards (interrupt missing order id → pick in the chat
-     flow; also offered after a rejection so the user can re-ask) ---------- */
-
   private orderCards(
     orders: Order[],
     decided: boolean | undefined,
@@ -190,8 +181,6 @@ export class MessageBubble extends LightElement {
     );
   }
 
-  /* ---------- Ticket preview confirm card (interrupt confirm_ticket → resume) ---------- */
-
   private ticketConfirm(
     preview: TicketPreview,
     decided: boolean | undefined,
@@ -250,15 +239,11 @@ export class MessageBubble extends LightElement {
     );
   }
 
-  /* ---------- Actions frame: transfer / ticket / refund / order picker ---------- */
-
   private actionBar(m: BotMsg) {
     const buttons: unknown[] = [];
     const extras: unknown[] = [];
     for (const a of m.actions) {
       if (a.type === "select_order") {
-        // The user quoted an order number that isn't theirs and got rejected; list the
-        // orders under their name to pick from. A rejection needs a way forward.
         extras.push(
           this.orderCards(a.orders ?? [], m.decided, (o) => {
             this.cb?.onPickOrderAsk(m.id, o);

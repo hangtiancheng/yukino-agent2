@@ -24,11 +24,6 @@ import { setPageTitle } from "~/lib/router";
 import { readSSEStream } from "~/lib/sse";
 import type { ConversationItem, HistoryMessage } from "~/lib/types";
 
-/* Chat page: SSE streaming, conversation sidebar, interrupts (order picker /
-   ticket confirm), actions (transfer / ticket / refund), citations and feedback.
-   Messages are updated immutably so each <message-bubble> only re-renders when
-   its own msg object changes (Lit property identity). */
-
 @customElement("chat-page")
 export class ChatPage extends LightElement {
   @state() private messages: Msg[] = [];
@@ -45,8 +40,6 @@ export class ChatPage extends LightElement {
   private listRef = createRef<HTMLDivElement>();
   private inputRef = createRef<HTMLTextAreaElement>();
 
-  /** Stable callback bundle handed to every bubble (identity never changes, so
-      bubbles don't re-render because of it). */
   private cb: BubbleCallbacks = {
     onCite: (c, el) => {
       this.cite = { c, rect: el.getBoundingClientRect() };
@@ -85,7 +78,6 @@ export class ChatPage extends LightElement {
   override connectedCallback(): void {
     super.connectedCallback();
     setPageTitle("Yukino Select · AI Assistant");
-    // Chat page renders client-side only (SPA); restore the current conversation id
     const v = localStorage.getItem(CONV_KEY);
     this.conversationId = v ? Number(v) : null;
     getUserId();
@@ -95,23 +87,17 @@ export class ChatPage extends LightElement {
   protected override updated(
     changed: Map<string | number | symbol, unknown>,
   ): void {
-    // Scroll to the bottom after every message update
     if (changed.has("messages")) {
       const el = this.listRef.value;
       if (el) {
         el.scrollTop = el.scrollHeight;
       }
     }
-    // Focus the input when idle (after sending, switching conversations, or new chat)
     if (changed.has("busy") && !this.busy) {
       this.inputRef.value?.focus();
     }
   }
 
-  /** The composer textarea is uncontrolled (no value binding): lit-jsx commits
-      props as property writes, and re-writing .value on every keystroke would
-      reset the caret. State lives in the DOM; we only touch it programmatically
-      to clear after send. */
   private growInput(): void {
     const el = this.inputRef.value;
     if (el) {
@@ -119,8 +105,6 @@ export class ChatPage extends LightElement {
       el.style.height = `${String(Math.min(el.scrollHeight, 128))}px`;
     }
   }
-
-  /* ---------- store plumbing ---------- */
 
   private persistConvId(id: number | null): void {
     if (id === null) {
@@ -137,9 +121,7 @@ export class ChatPage extends LightElement {
         "/api/conversations?user_id=" + encodeURIComponent(getUserId()),
       );
       this.conversations = d.items ?? [];
-    } catch {
-      /* A sidebar failure should not break the chat */
-    }
+    } catch {}
   }
 
   private updateBot(id: number, fn: (m: BotMsg) => BotMsg): void {
@@ -160,8 +142,6 @@ export class ChatPage extends LightElement {
     };
   }
 
-  /** Render one SSE stream into the given bot message; on interrupt, store the
-      conversation id so it can be resumed */
   private async streamInto(
     botId: number,
     doFetch: () => Promise<Response>,
@@ -182,7 +162,6 @@ export class ChatPage extends LightElement {
           this.updateBot(botId, (m) => ({ ...m, actions: items }));
         },
         interrupt: (data) => {
-          // Interrupts send no done frame, so capture the conversation id here for resume
           if (data.conversation_id) {
             this.persistConvId(data.conversation_id);
           }
@@ -208,7 +187,6 @@ export class ChatPage extends LightElement {
     }
   }
 
-  /** Send a message and stream the reply */
   private async send(text: string): Promise<void> {
     const message = text.trim();
     if (!message || this.busyFlag) {
@@ -234,11 +212,10 @@ export class ChatPage extends LightElement {
     } finally {
       this.busyFlag = false;
       this.busy = false;
-      void this.loadConversations(); // Refresh the sidebar after each turn
+      void this.loadConversations();
     }
   }
 
-  /** Resume the graph suspended by an interrupt (pick order / confirm ticket) */
   private async resume(
     userText: string,
     payload: Record<string, unknown>,
@@ -268,8 +245,6 @@ export class ChatPage extends LightElement {
     }
   }
 
-  /** Client-side simulation of transferring to a human agent: shows a transferred
-      notice + a greeting from Yukino (no real agent system) */
   private transferHuman(): void {
     const sys: BotMsg = {
       id: this.nextId++,
@@ -294,7 +269,6 @@ export class ChatPage extends LightElement {
     this.messages = [...this.messages, sys, greet];
   }
 
-  /** Plain-text system message (ticket created / refund submitted) */
   private pushSystem(text: string): void {
     const sys: BotMsg = {
       id: this.nextId++,
@@ -309,8 +283,6 @@ export class ChatPage extends LightElement {
     this.messages = [...this.messages, sys];
   }
 
-  /** One-shot 👍/👎 feedback: 👎 sends the question to the low-confidence pool for
-      the flywheel, 👍 is only logged by the backend; fail silently */
   private giveFeedback(botId: number, rating: "up" | "down"): void {
     const xs = this.messages;
     const idx = xs.findIndex((m) => m.id === botId);
@@ -318,8 +290,6 @@ export class ChatPage extends LightElement {
     if (target?.role !== "bot" || target.feedback) {
       return;
     }
-    // Find the nearest user bubble above this reply and pass that turn's original
-    // question to the backend (needed for the 👎 pool)
     let question = "";
     for (let i = idx - 1; i >= 0; i--) {
       const m = xs[i];
@@ -351,8 +321,6 @@ export class ChatPage extends LightElement {
     if (this.busyFlag) {
       return;
     }
-    // Skip only when this is already the current conversation with content loaded;
-    // right after a refresh the list is empty, so clicking it must still reload
     if (cid === this.conversationId && this.messages.length > 0) {
       return;
     }
@@ -383,16 +351,14 @@ export class ChatPage extends LightElement {
         }
       }
       this.messages = msgs;
-    } catch {
-      /* The chat can continue even if history fails to load */
-    }
-    void this.loadConversations(); // Refresh the active highlight
+    } catch {}
+    void this.loadConversations();
   }
 
   private newChat(): void {
-    this.persistConvId(null); // Drop the current conversation_id (old one stays in the sidebar)
+    this.persistConvId(null);
     this.messages = [];
-    void this.loadConversations(); // Clear the active highlight
+    void this.loadConversations();
   }
 
   private submit(preset?: string): void {
@@ -407,8 +373,6 @@ export class ChatPage extends LightElement {
     }
     void this.send(message);
   }
-
-  /* ---------- view ---------- */
 
   private emptyState() {
     return (

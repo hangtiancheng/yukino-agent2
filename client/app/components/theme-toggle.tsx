@@ -35,8 +35,6 @@ export class ThemeToggle extends LightElement {
     changed: Map<string | number | symbol, unknown>,
   ): void {
     if (changed.has("theme") && changed.get("theme") !== undefined) {
-      // Swap-in: the new icon rotates/scales into place (the old one is gone
-      // with the re-render — same feel as the AnimatePresence mode="wait" original)
       const el = this.iconRef.value;
       if (el) {
         animate(

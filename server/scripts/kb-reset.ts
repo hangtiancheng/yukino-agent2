@@ -1,4 +1,3 @@
-// Reset source knowledge while preserving human-approved flywheel answers.
 import { closeDb, prisma } from "#/db/client.ts";
 import * as repository from "#/db/repository.ts";
 import * as documents from "#/kb/documents.ts";

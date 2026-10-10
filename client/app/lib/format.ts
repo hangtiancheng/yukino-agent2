@@ -1,4 +1,3 @@
-/** Same formatting conventions as the terminal artifacts. */
 export const fmtTime = (iso?: string | null): string =>
   iso ? String(iso).replace("T", " ").slice(0, 19) : "—";
 

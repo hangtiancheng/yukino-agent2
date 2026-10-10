@@ -1,4 +1,3 @@
-// Vectorize all pending chunks (idempotent, re-runnable).
 import { closeDb } from "#/db/client.ts";
 import * as dualwrite from "#/kb/dualwrite.ts";
 import * as store from "#/kb/store.ts";

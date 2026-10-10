@@ -1,4 +1,3 @@
-// Markdown-aware chunking: header split, recursive split with sentence overlap, table row split.
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
 const HEADERS: [string, string][] = [
@@ -7,8 +6,6 @@ const HEADERS: [string, string][] = [
   ["###", "h3"],
   ["####", "h4"],
 ];
-// Paragraphs/newlines first, then sentence punctuation, then words and chars. CJK
-// terminators are kept so mixed-language material still splits on sentence boundaries.
 const TEXT_SEPARATORS = [
   "\n\n",
   "\n",
@@ -29,16 +26,9 @@ export interface MarkdownSection {
   metadata: Record<string, string>;
 }
 
-// Header text is optional: a bare "##" line is a header with an empty title
-// (same as langchain's MarkdownHeaderTextSplitter).
 const HEADER_RE = /^(#{1,4})(?:\s+(.*))?$/;
 
 export function splitSections(md: string): MarkdownSection[] {
-  // Header-aware split with the headers stripped from the body: each section carries
-  // its h1..h4 path in metadata. Content before the first header becomes its own section.
-  // Mirrors langchain's MarkdownHeaderTextSplitter: header detection is suspended inside
-  // ``` / ~~~ code fences (a "# comment" in a code block stays content), and lines are
-  // matched after stripping, so indented headers still count.
   const sections: MarkdownSection[] = [];
   const stack: Record<string, string> = {};
   let buffer: string[] = [];
@@ -55,8 +45,6 @@ export function splitSections(md: string): MarkdownSection[] {
   for (const line of md.split("\n")) {
     const stripped = line.trim();
     if (!inCodeBlock) {
-      // Only exactly one ``` occurrence opens a block — an inline span like "```a```b"
-      // does not (same rule as upstream's count("```") == 1).
       if (
         stripped.startsWith("```") &&
         stripped.split("```").length - 1 === 1
@@ -104,8 +92,6 @@ export async function recursiveSplit(
   return splitter.splitText(text);
 }
 
-// "." terminates English sentences; the CJK terminators keep mixed-language material working.
-// Trailing whitespace is folded into the terminator so an English overlap carries no leading space.
 const SENT_RE = /[^.。！？!?…\n]*[.。！？!?…\n]\s*|[^.。！？!?…\n]+$/g;
 
 function splitSentences(text: string): string[] {
@@ -113,7 +99,6 @@ function splitSentences(text: string): string[] {
 }
 
 function trailingSentences(text: string, maxChars: number): string {
-  // Keep whole trailing sentences up to maxChars; a single over-long sentence is kept intact.
   const out: string[] = [];
   let total = 0;
   for (const s of splitSentences(text).reverse()) {
@@ -167,8 +152,6 @@ export function isTableBlock(text: string): boolean {
 }
 
 export function splitTableRows(tableMd: string, maxRows: number): string[] {
-  // Split a large table by row groups; repeat the header on every group and keep the
-  // preamble on the first group only.
   const lines = tableMd
     .trim()
     .split("\n")

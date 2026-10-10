@@ -6,19 +6,10 @@ import type { PropertyValues } from "lit";
 import { LightElement } from "~/lib/light-element";
 import { subscribeTheme } from "~/lib/theme";
 
-/* Charts built on Chart.js (recharts replacement):
-   - GroupedBarChart: four strategies × buckets, grouped bars (RAG eval)
-   - ScanLineChart: threshold scan, two lines (observability · confidence calibration)
-   - RingGauge: donut share (refusal rate)
-   Pages recompute nothing; these only render the artifacts. Colors are resolved
-   from the theme CSS vars at build time and the chart rebuilds on theme flip,
-   so light/dark stay in sync automatically. */
-
 export interface BarGroup {
   key: string;
   label: string;
   sub?: string;
-  /** Aggregate group (e.g. "overall"); kept for callers that filter on it. */
   agg?: boolean;
 }
 
@@ -36,8 +27,6 @@ function cssVar(name: string): string {
     .trim();
 }
 
-/** Series colors arrive as "var(--chart-n)" strings (theme-aware); Chart.js needs
-    concrete colors, so resolve them against the current theme. */
 function resolveColor(c: string): string {
   const m = /^var\((--[^)]+)\)$/.exec(c.trim());
   return m ? cssVar(m[1]) || c : c;
@@ -60,8 +49,6 @@ function tooltipStyle() {
   };
 }
 
-/** Dashed grid lines (Chart.js v4 has no grid-dash option): draw them by hand
-    from the scale ticks, matching the original recharts strokeDasharray="3 3". */
 function makeDashedGrid(vertical: boolean): Plugin {
   return {
     id: vertical ? "dashedGridV" : "dashedGridH",
@@ -92,8 +79,6 @@ function makeDashedGrid(vertical: boolean): Plugin {
     },
   };
 }
-
-/* ---------- Base: canvas lifecycle + theme rebuild ---------- */
 
 abstract class ChartElement extends LightElement {
   protected chart?: Chart;
@@ -130,16 +115,12 @@ abstract class ChartElement extends LightElement {
     this.build();
   }
 
-  /** Rebuild (with entrance animation) when the data inputs change — same feel
-      as the recharts originals, which re-animated on data changes. */
   protected shouldRebuild(_changed: PropertyValues): boolean {
     return false;
   }
 
   protected abstract build(): void;
 }
-
-/* ---------- Grouped bar chart ---------- */
 
 @customElement("grouped-bar-chart")
 export class GroupedBarChartEl extends ChartElement {
@@ -166,7 +147,6 @@ export class GroupedBarChartEl extends ChartElement {
     const tickColor = cssVar("--on-surface-variant");
     const axisColor = cssVar("--outline-variant");
 
-    // Numeric value on top of every bar (recharts LabelList equivalent)
     const valueLabels: Plugin<"bar"> = {
       id: "valueLabels",
       afterDatasetsDraw(chart) {
@@ -198,7 +178,6 @@ export class GroupedBarChartEl extends ChartElement {
         labels: this.groups.map((g) => g.label),
         datasets: this.series.map((s) => ({
           label: s.label,
-          // A null value renders no bar (not scored ≠ zero)
           data: this.groups.map((g) => {
             const v = this.getVal(s.key, g.key);
             return v === undefined || v === null ? null : v;
@@ -264,8 +243,6 @@ export class GroupedBarChartEl extends ChartElement {
   }
 }
 
-/* ---------- Threshold scan line chart ---------- */
-
 export interface ScanPoint {
   t: number;
   pass_rate: number;
@@ -293,7 +270,6 @@ export class ScanLineChartEl extends ChartElement {
     const pick = this.pick;
     const inUse = this.inUse;
 
-    // Selected threshold (dashed primary) + threshold in use (violet) reference lines
     const refLines: Plugin<"line"> = {
       id: "refLines",
       afterDatasetsDraw(chart) {
@@ -435,11 +411,8 @@ export class ScanLineChartEl extends ChartElement {
   }
 }
 
-/* ---------- Ring gauge (donut share) ---------- */
-
 @customElement("ring-gauge")
 export class RingGaugeEl extends ChartElement {
-  /** rate is 0–1 */
   @property({ attribute: false }) rate = 0;
   @property({ attribute: false }) caption: unknown = "";
 
